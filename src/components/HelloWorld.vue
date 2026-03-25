@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 // Correcting paths: if App.vue is in /src, assets are in ./assets/
-import viteLogo from '../assets/vite.svg'
-import vueLogo from '../assets/vue.svg'
-import heroImg from '../assets/hero.png'
-
 const count = ref(0)
 const status = ref('System Online')
 </script>
@@ -14,15 +10,12 @@ const status = ref('System Online')
     <!-- Header with Logos -->
     <header class="header">
       <div class="logos">
-        <img :src="viteLogo" class="logo" alt="Vite logo" />
-        <img :src="vueLogo" class="logo vue" alt="Vue logo" />
       </div>
       <h1>Automation Framework</h1>
     </header>
 
     <!-- Hero Section -->
     <section class="hero-section">
-      <img :src="heroImg" class="hero-image" alt="Hero Illustration" />
       <div class="hero-content">
         <h2>Dashboard Overview</h2>
         <p>
