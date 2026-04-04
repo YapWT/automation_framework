@@ -4,13 +4,18 @@ use std::process::Command;
 use std::path::PathBuf;
 use tauri::WindowEvent;
 
+// Robust helper to locate the automation-engine/tests folder
 fn get_tests_dir() -> PathBuf {
     let mut path = std::env::current_dir().unwrap();
+    
+    // If we are inside src-tauri (common in dev mode), go up to project root
     if path.ends_with("src-tauri") {
         path.pop();
     }
+    
     path.push("automation-engine");
     path.push("tests");
+    
     if !path.exists() {
         fs::create_dir_all(&path).unwrap();
     }
@@ -54,19 +59,28 @@ async fn execute_script(filename: String) -> Result<String, String> {
     engine_path.push("automation-engine");
 
     if !script_path.exists() {
-        return Err("File not found".into());
+        return Err(format!("File not found at: {:?}", script_path));
     }
 
-    Command::new("cmd")
-        .args([
-            "/C", 
-            "npx", 
-            "tsx", 
-            script_path.to_str().unwrap()
-        ])
-        .current_dir(engine_path) 
-        .spawn()
-        .map_err(|e| e.to_string())?;
+    // CROSS-PLATFORM EXECUTION LOGIC
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("cmd")
+            .args(["/C", "npx", "tsx", script_path.to_str().unwrap()])
+            .current_dir(engine_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // On Linux/macOS, we call npx directly
+        Command::new("npx")
+            .args(["tsx", script_path.to_str().unwrap()])
+            .current_dir(engine_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
 
     Ok(format!("Started {}", filename))
 }

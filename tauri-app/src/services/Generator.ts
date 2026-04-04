@@ -2,7 +2,6 @@ export class ScriptGenerator {
     public static generate(workflow: any): string {
         const steps = workflow.steps;
 
-        // 1. Analyze requirements for modular imports
         const needsWeb = steps.some((s: any) => ['navigate', 'click', 'fill', 'download'].includes(s.action));
         const needsExcel = workflow.config.useExcel && workflow.config.excelPath;
         const needsFS = steps.some((s: any) => ['move', 'mkdir'].includes(s.action));
@@ -14,10 +13,9 @@ export class ScriptGenerator {
 
         code += `\n/** Generated Task: ${workflow.name} */\n`;
 
-        // Helper to sanitize strings and handle Excel variables
         const val = (str: string) => {
             if (!str) return '';
-            // Replace single backslashes with forward slashes to avoid JS escape errors
+            // Sanitize paths for both Windows and Linux
             const sanitized = str.replace(/\\/g, '/');
             return needsExcel
                 ? sanitized.replace(/{{(.*?)}}/g, (_: any, g: any) => `\${rowData['${g}']}`)
@@ -27,7 +25,6 @@ export class ScriptGenerator {
         const getStepLogic = (indent: string) => {
             return steps.map((step: any) => {
                 const p = step.params;
-
                 switch (step.action) {
                     case 'navigate': return `${indent}await page.goto('${val(p.url)}', { waitUntil: 'networkidle' });`;
                     case 'fill': return `${indent}await page.fill('${p.selector}', \`${val(p.value)}\`);`;
@@ -48,11 +45,9 @@ export class ScriptGenerator {
         }
 
         if (needsExcel) {
-            // Sanitize the Excel path itself
-            const cleanExcelPath = workflow.config.excelPath.replace(/\\/g, '/');
             code += `
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile('${cleanExcelPath}');
+  await workbook.xlsx.readFile('${val(workflow.config.excelPath)}');
   const sheet = workbook.getWorksheet(1);
   if (!sheet) throw new Error("Worksheet not found");
 
