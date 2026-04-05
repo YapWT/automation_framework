@@ -9,4 +9,4 @@ node_modules/
 
 
 # generated test script
-/tauri-app/automation-engine/tests
+/tests
