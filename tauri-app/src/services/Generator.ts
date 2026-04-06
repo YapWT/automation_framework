@@ -16,7 +16,10 @@ export class ScriptGenerator {
         const val = (str: string) => {
             if (!str) return '';
             const sanitized = str.replace(/\\/g, '/');
-            return needsExcel ? sanitized.replace(/{{(.*?)}}/g, (_: any, g: any) => `\${rowData['${g}']}`) : sanitized;
+            if (needsExcel) {
+                return sanitized.replace(/{{(.*?)}}/g, (_: any, g: any) => `\${rowData['${g.trim()}'] || ''}`);
+            }
+            return sanitized;
         };
 
         const getLocator = (p: any) => {
@@ -43,7 +46,6 @@ export class ScriptGenerator {
                 const p = step.params;
                 const options = `{ force: ${p.force || false}, timeout: ${p.timeout || 30000} }`;
                 const logDesc = `${step.action.toUpperCase()}: ${val(p.selector || p.url || p.key || 'action')}`.replace(/"/g, '\\"');
-
                 let logic = `${indent}console.log("STARTING: ${logDesc}");\n`;
                 switch (step.action) {
                     case 'navigate': logic += `${indent}await page.goto('${val(p.url)}', { waitUntil: 'networkidle', timeout: 60000 });`; break;
@@ -63,9 +65,28 @@ export class ScriptGenerator {
         code += `async function run() {\n`;
         if (needsWeb) code += `  const browser = await chromium.launch({ headless: ${workflow.config.headless} });\n  const page = await browser.newPage();\n`;
         if (needsExcel) {
-            code += `\n  const workbook = new ExcelJS.Workbook();\n  await workbook.xlsx.readFile('${val(workflow.config.excelPath)}');\n  const sheet = workbook.getWorksheet(1);\n  const headers: string[] = [];\n  sheet.getRow(1).eachCell(c => headers.push(c.value?.toString() || ''));\n\n  for (let i = 2; i <= sheet.rowCount; i++) {\n    const row = sheet.getRow(i); const rowData: any = {};\n    headers.forEach((h, idx) => rowData[h] = row.getCell(idx + 1).value);\n    try {\n      console.log(\`[PROCESS] Row \${i-1} started\`);\n${getStepLogic('      ')}\n    } catch (e: any) {\n      console.error(\`[ERROR] Row \${i-1} failed: \`, e?.message || e);\n    }\n  }\n`;
+            const p = workflow.config.excelPath.replace(/\\/g, '/');
+            const isCsv = p.toLowerCase().endsWith('.csv');
+            code += `
+  console.log("LOG: Loading Data Source...");
+  const workbook = new ExcelJS.Workbook();
+  ${isCsv ? `await workbook.csv.readFile('${p}');` : `await workbook.xlsx.readFile('${p}');`}
+  const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
+  const headers: string[] = [];
+  sheet.getRow(1).eachCell((c, n) => { headers[n] = c.value?.toString().trim() || ''; });
+
+  for (let i = 2; i <= sheet.rowCount; i++) {
+    const row = sheet.getRow(i); const rowData: any = {};
+    headers.forEach((h, idx) => { if(h) rowData[h] = row.getCell(idx).value?.toString() || ''; });
+    try {
+      console.log(\`\\n--- [PROCESS] Row \${i-1} started ---\`);
+${getStepLogic('      ')}
+    } catch (e: any) {
+      console.error(\`[ERROR] Row \${i-1} failed: \`, e?.message || e);
+    }
+  }\n`;
         } else {
-            code += `  try {\n${getStepLogic('    ')}\n    console.log("[SUCCESS] All steps done.");\n  } catch (e: any) {\n    console.error("[ERROR] Task failed: ", e?.message || e);\n  }\n`;
+            code += `  try {\n${getStepLogic('    ')}\n    console.log("[SUCCESS] Automation finished.");\n  } catch (e: any) {\n    console.error("[ERROR] Task failed: ", e?.message || e);\n  }\n`;
         }
         if (needsWeb) code += `  await browser.close();\n`;
         code += `}\n\nrun().catch(err => console.error("[FATAL]", err));`;

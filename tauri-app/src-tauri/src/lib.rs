@@ -52,10 +52,10 @@ async fn auto_save_temp(code: String) -> Result<String, String> {
 #[tauri::command]
 async fn save_permanent_script(code: String, filename: String) -> Result<String, String> {
     let mut path = get_tests_dir();
-    let name = if filename.ends_with(".ts") { filename } else { format!("{}.ts", filename) };
+    let name = if filename.ends_with(".ts") { filename.clone() } else { format!("{}.ts", filename) };
     path.push(&name);
     fs::write(path, code).map_err(|e| e.to_string())?;
-    Ok(format!("Saved: {}", name))
+    Ok(format!("Saved successfully"))
 }
 
 #[tauri::command]
