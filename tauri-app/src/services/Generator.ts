@@ -11,6 +11,7 @@ export class ScriptGenerator {
         if (needsExcel) code += `import ExcelJS from 'exceljs';\n`;
         if (needsFS) code += `import fs from 'fs-extra';\n`;
 
+        code += `\nconst logTask = (status, id, msg) => console.log(\`TASK:\${status}:\${id}:\${msg || ''}\`);\n`;
         code += `\n/** Generated Task: ${workflow.name} */\n`;
 
         const val = (str: string) => {
@@ -42,11 +43,14 @@ export class ScriptGenerator {
         };
 
         const getStepLogic = (indent: string) => {
-            return steps.map((step: any) => {
+            return steps.map((step: any, index: number) => {
                 const p = step.params;
                 const options = `{ force: ${p.force || false}, timeout: ${p.timeout || 30000} }`;
+                const stepId = `${step.action.toUpperCase()}_${index + 1}`;
                 const logDesc = `${step.action.toUpperCase()}: ${val(p.selector || p.url || p.key || 'action')}`.replace(/"/g, '\\"');
-                let logic = `${indent}console.log("STARTING: ${logDesc}");\n`;
+
+                let logic = `${indent}logTask('START', '${stepId}', \`${logDesc}\`);\n`;
+
                 switch (step.action) {
                     case 'navigate': logic += `${indent}await page.goto('${val(p.url)}', { waitUntil: 'networkidle', timeout: 60000 });`; break;
                     case 'fill': logic += `${indent}await ${getLocator(p)}.fill(\`${val(p.value)}\`, ${options});`; break;
@@ -58,38 +62,69 @@ export class ScriptGenerator {
                     case 'mkdir': logic += `${indent}await fs.ensureDir(\`${val(p.path)}\`);`; break;
                     case 'move': logic += `${indent}await fs.move(\`${val(p.from)}\`, \`${val(p.to)}\`, { overwrite: true });`; break;
                 }
-                return logic + `\n${indent}console.log("FINISHED: ${step.action.toUpperCase()}");`;
+                return logic + `\n${indent}logTask('DONE', '${stepId}');`;
             }).join('\n');
         };
 
         code += `async function run() {\n`;
-        if (needsWeb) code += `  const browser = await chromium.launch({ headless: ${workflow.config.headless} });\n  const page = await browser.newPage();\n`;
+        code += `  let browser = null;\n`; // Keep browser reference for cleanup
+
+        code += `  try {\n`;
+        if (needsWeb) {
+            code += `    logTask('START', 'BROWSER', 'Initializing Browser...');\n`;
+            code += `    browser = await chromium.launch({\n`;
+            code += `      headless: ${workflow.config.headless},\n`;
+            code += `      handleSIGINT: true,\n`;  // CRITICAL: Die if parent dies
+            code += `      handleSIGTERM: true,\n`; // CRITICAL: Die if parent dies
+            code += `      handleSIGHUP: true\n`;   // CRITICAL: Die if parent dies
+            code += `    });\n`;
+            code += `    const page = await browser.newPage();\n`;
+            code += `    logTask('DONE', 'BROWSER');\n`;
+        }
+
         if (needsExcel) {
             const p = workflow.config.excelPath.replace(/\\/g, '/');
             const isCsv = p.toLowerCase().endsWith('.csv');
             code += `
-  console.log("LOG: Loading Data Source...");
-  const workbook = new ExcelJS.Workbook();
-  ${isCsv ? `await workbook.csv.readFile('${p}');` : `await workbook.xlsx.readFile('${p}');`}
-  const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
-  const headers: string[] = [];
-  sheet.getRow(1).eachCell((c, n) => { headers[n] = c.value?.toString().trim() || ''; });
+    logTask('START', 'EXCEL', 'Loading Data Source...');
+    const workbook = new ExcelJS.Workbook();
+    ${isCsv ? `await workbook.csv.readFile('${p}');` : `await workbook.xlsx.readFile('${p}');`}
+    const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
+    const headers: string[] = [];
+    sheet.getRow(1).eachCell((c, n) => { headers[n] = c.value?.toString().trim() || ''; });
+    logTask('DONE', 'EXCEL');
 
-  for (let i = 2; i <= sheet.rowCount; i++) {
-    const row = sheet.getRow(i); const rowData: any = {};
-    headers.forEach((h, idx) => { if(h) rowData[h] = row.getCell(idx).value?.toString() || ''; });
-    try {
-      console.log(\`\\n--- [PROCESS] Row \${i-1} started ---\`);
-${getStepLogic('      ')}
-    } catch (e: any) {
-      console.error(\`[ERROR] Row \${i-1} failed: \`, e?.message || e);
-    }
-  }\n`;
+    for (let i = 2; i <= sheet.rowCount; i++) {
+      const rowId = \`ROW_\${i-1}\`;
+      const row = sheet.getRow(i); const rowData: any = {};
+      headers.forEach((h, idx) => { if(h) rowData[h] = row.getCell(idx).value?.toString() || ''; });
+      
+      try {
+        logTask('START', rowId, \`Processing Data Row \${i-1}\`);
+  ${getStepLogic('        ')}
+        logTask('DONE', rowId);
+      } catch (e: any) {
+        logTask('FAIL', rowId, e?.message || e);
+      }
+    }\n`;
         } else {
-            code += `  try {\n${getStepLogic('    ')}\n    console.log("[SUCCESS] Automation finished.");\n  } catch (e: any) {\n    console.error("[ERROR] Task failed: ", e?.message || e);\n  }\n`;
+            code += `    ${getStepLogic('    ')}\n`;
+            code += `    logTask('DONE', 'FINISH', 'Automation finished successfully.');\n`;
         }
-        if (needsWeb) code += `  await browser.close();\n`;
-        code += `}\n\nrun().catch(err => console.error("[FATAL]", err));`;
+
+        code += `  } catch (e: any) {\n`;
+        code += `    logTask('FAIL', 'ERROR', e.message);\n`;
+        code += `  } finally {\n`;
+        if (needsWeb) {
+            code += `    if (browser) {\n`;
+            code += `      logTask('START', 'CLEANUP', 'Closing Browser...');\n`;
+            code += `      await browser.close();\n`;
+            code += `      logTask('DONE', 'CLEANUP');\n`;
+            code += `    }\n`;
+        }
+        code += `  }\n`;
+        code += `}\n\nrun().catch(err => console.log("TASK:FAIL:FATAL:" + err.message));`;
+
         return code;
     }
 }

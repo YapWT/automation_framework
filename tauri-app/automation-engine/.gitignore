@@ -10,3 +10,5 @@ node_modules/
 
 # generated test script
 /tests
+
+/tests/temp_task.ts
