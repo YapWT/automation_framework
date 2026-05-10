@@ -33,36 +33,44 @@ export function useAutomation() {
         selectedStepIndex.value !== null ? workflow.value.steps[selectedStepIndex.value] : null
     );
 
+    const STRATEGIES_BY_ACTION: Record<string, any[]> = {
+        fill: [{ id: 'textbox', label: 'Text Box / Input' }, { id: 'placeholder', label: 'By Hint' }, { id: 'label', label: 'By Label' }, { id: 'css', label: 'Advanced CSS' }],
+        click: [{ id: 'button', label: 'Button' }, { id: 'link', label: 'Link' }, { id: 'checkbox', label: 'Checkbox' }, { id: 'radio', label: 'Radio Button' }, { id: 'text', label: 'Visible Text' }, { id: 'css', label: 'Advanced CSS' }],
+        upload: [{ id: 'label', label: 'Label next to Upload' }, { id: 'textbox', label: 'Input Box' }],
+        download: [{ id: 'button', label: 'Download Button' }, { id: 'link', label: 'Download Link' }],
+        wait_for: [{ id: 'text', label: 'Visible Text' }, { id: 'textbox', label: 'Text Box' }, { id: 'button', label: 'Button' }, { id: 'css', label: 'Advanced CSS' }],
+    };
+
     function addStep(type: string) {
         isManualEdit.value = false;
         const defaults: Record<string, any> = {
-        navigate: { url: 'https://' },
-        wait_for: { matchBy: 'text', selector: '', timeout: 30000, index: 0 },
-        fill: { matchBy: 'textbox', selector: '', value: '', exact: false, force: false, timeout: 30000, index: 0 },
-        click: { matchBy: 'button', selector: '', exact: false, force: false, timeout: 30000, index: 0 },
-        keyboard_press: { key: 'Enter' },
-        upload: { matchBy: 'label', selector: '', path: '', index: 0 },
-        download: { matchBy: 'button', selector: '', path: './downloads', exact: false, index: 0 },
-        mkdir: { path: '' },
-        move: { from: '', to: '' }
+            navigate: { url: 'https://' },
+            wait_for: { matchBy: 'text', selector: '', timeout: 30000, index: 0, exact: false, force: false },
+            fill: { matchBy: 'textbox', selector: '', value: '', exact: false, force: false, timeout: 30000, index: 0 },
+            click: { matchBy: 'button', selector: '', exact: false, force: false, timeout: 30000, index: 0 },
+            keyboard_press: { key: 'Enter' },
+            upload: { matchBy: 'label', selector: '', path: '', index: 0, exact: false, force: false },
+            download: { matchBy: 'button', selector: '', path: './downloads', exact: false, force: false, index: 0 },
+            mkdir: { path: '' },
+            move: { from: '', to: '' }
         };
 
         workflow.value.steps.push({
-        id: Date.now(),
-        action: type,
-        params: { ...defaults[type] }
+            id: Date.now(),
+            action: type,
+            params: { ...defaults[type] }
         });
         selectedStepIndex.value = workflow.value.steps.length - 1;
     }
 
     async function selectExcel() {
-        const selected = await open({ 
-        multiple: false, 
-        filters: [{ name: 'Data Source', extensions: ['xlsx', 'csv', 'xls'] }] 
+        const selected = await open({
+            multiple: false,
+            filters: [{ name: 'Data Source', extensions: ['xlsx', 'csv', 'xls'] }]
         });
         if (selected) {
-        workflow.value.config.excelPath = selected as string;
-        workflow.value.config.useExcel = true;
+            workflow.value.config.excelPath = selected as string;
+            workflow.value.config.useExcel = true;
         }
     }
 
@@ -234,7 +242,7 @@ export function useAutomation() {
     }
 
     return {
-        activeTab, workflow, tasks, savedScripts, isRecording, isProcessing, showConsole,
+        STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isRecording, isProcessing, showConsole,
         isManualEdit, manualCode, selectedStepIndex, clipboardStep, finalCode, activeStep,
         handleCopy, handlePaste, handleIncomingLog, refreshSaved, handleRun, handleRunManual,
         handleSave, stopAutomation, toggleRecording, handleDelete, loadScript, addStep, selectExcel,

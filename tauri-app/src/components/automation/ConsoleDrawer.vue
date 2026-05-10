@@ -44,11 +44,11 @@ function scroll(direction: 'top' | 'bottom') {
       </div>
 
       <div class="console-header-right">
-        <button v-if="isProcessing" @click="emit('stop')" class="stop-btn-console">
-          <Square size="12" fill="currentColor"/><span class="ml-1">STOP</span>
+        <button v-if="isProcessing" @click="emit('stop')" class="terminate-btn-console" title="Terminate the automation tasks">
+          <Square size="12" fill="currentColor"/><span class="ml-1">Terminate</span>
         </button>
         <button @click="emit('clear')" class="console-tool-btn" title="Clear Logs"><Eraser size="14"/></button>
-        <button @click="emit('close')" class="console-tool-btn"><ChevronDown size="16"/></button>
+        <button @click="emit('close')" class="console-tool-btn" title="Close the console tool"><ChevronDown size="16"/></button>
       </div>
     </div>
 
@@ -151,7 +151,7 @@ function scroll(direction: 'top' | 'bottom') {
 .console-title { font-size: 0.7rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; }
 .console-search { display: flex; align-items: center; gap: 8px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 2px 10px; width: 200px; margin-left: 12px; }
 .search-input { background: transparent; border: none; outline: none; color: #cbd5e1; font-size: 0.75rem; width: 100%; }
-.stop-btn-console { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; display: flex; align-items: center; border: none; cursor: pointer; }
+.terminate-btn-console { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; display: flex; align-items: center; border: none; cursor: pointer; }
 .task-row { display: flex; gap: 12px; margin-bottom: 6px; align-items: flex-start; }
 .status-icon { width: 20px; flex-shrink: 0; display: flex; justify-content: center; padding-top: 2px; }
 .task-label { color: #e2e8f0; font-size: 0.85rem; }

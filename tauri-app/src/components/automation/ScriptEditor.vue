@@ -32,7 +32,7 @@ function scrollToTop() {
         :style="{ height: '100%', width: '100%' }"
       />
       
-      <button class="scroll-top-fab" @click="scrollToTop">
+      <button class="scroll-top-fab" @click="scrollToTop" title="Scroll to Top">
         <ChevronUp size="18" />
       </button>
     </div>

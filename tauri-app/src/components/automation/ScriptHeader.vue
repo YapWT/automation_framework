@@ -63,7 +63,7 @@ const emit = defineEmits([
           <Zap size="14"/> Test Run
         </button>
 
-        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }">
+        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }" title="Open the console tool">
           <Terminal size="18"/>
         </button>        
       </div>
