@@ -23,6 +23,8 @@ export function useAutomation() {
     const manualCode = ref("");
     const selectedStepIndex = ref<number | null>(null);
     const clipboardStep = ref<any>(null);
+    const leftSidebarCollapsed = ref(false);
+    const rightSidebarCollapsed = ref(false);
 
     const finalCode = computed({
         get: () => isManualEdit.value ? manualCode.value : ScriptGenerator.generate(workflow.value),
@@ -242,6 +244,7 @@ export function useAutomation() {
     }
 
     return {
+        leftSidebarCollapsed, rightSidebarCollapsed,
         STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isRecording, isProcessing, showConsole,
         isManualEdit, manualCode, selectedStepIndex, clipboardStep, finalCode, activeStep,
         handleCopy, handlePaste, handleIncomingLog, refreshSaved, handleRun, handleRunManual,

@@ -141,6 +141,7 @@ const filteredFiles = computed(() => {
   background: #e2e8f0;
   padding: 4px 10px;
   border-radius: 20px;
+  cursor: default;
 }
 
 /* GRID STYLES */

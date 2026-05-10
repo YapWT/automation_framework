@@ -124,7 +124,7 @@ function scroll(direction: 'top' | 'bottom') {
   opacity: 1;
 }
 
-.scroll-fab {
+.scroll-fab, .console-tool-btn, .clear-search {
   width: 28px;
   height: 28px;
   display: flex;
@@ -138,7 +138,7 @@ function scroll(direction: 'top' | 'bottom') {
   transition: all 0.2s;
 }
 
-.scroll-fab:hover {
+.scroll-fab:hover, .console-tool-btn:hover, .clear-search:hover {
   background: #6366f1; /* Indigo-500 */
   color: white;
 }

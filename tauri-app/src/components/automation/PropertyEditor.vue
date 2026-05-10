@@ -99,13 +99,12 @@ async function browse(step: any, key: string, isFolder: boolean) {
     </div>
 
     <!-- FIXED BOTTOM FOOTER: ALWAYS VISIBLE -->
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" title="Run without opening a visible browser window">
       <div class="check-row">
         <input 
           type="checkbox" 
           v-model="workflow.config.headless" 
           id="hd-chk" 
-          title="Run without opening a visible browser window"
         />
         <label for="hd-chk" class="footer-label">Run Headless</label>
       </div>
@@ -173,5 +172,17 @@ async function browse(step: any, key: string, isFolder: boolean) {
 .mt-3 { margin-top: 0.75rem; }
 .tip-box { background: #f0f9ff; padding: 12px; border-radius: 10px; font-size: 0.7rem; color: #0369a1; display: flex; gap: 10px; border: 1px solid #bae6fd; }
 .label-row { display: flex; justify-content: space-between; align-items: center; }
-.browse-link { color: #6366f1; border: none; background: none; font-size: 0.65rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.browse-link { 
+  background: #f1f5f9; 
+  border: none; 
+  color: #6366f1; 
+  font-size: 0.65rem; 
+  font-weight: 800; 
+  padding: 2px 6px; 
+  border-radius: 4px; 
+  cursor: pointer; 
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 </style>
