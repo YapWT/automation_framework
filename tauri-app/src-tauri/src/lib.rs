@@ -53,9 +53,17 @@ async fn auto_save_temp(code: String) -> Result<String, String> {
 
 #[tauri::command]
 async fn save_permanent_script(code: String, filename: String) -> Result<String, String> {
-    let mut path = get_tests_dir();
-    let name = if filename.ends_with(".ts") { filename } else { format!("{}.ts", filename) };
-    path.push(name);
+    // Check if 'filename' is actually a full path (contains separators)
+    let path = if filename.contains('/') || filename.contains('\\') {
+        std::path::PathBuf::from(filename)
+    } else {
+        // Fallback to default directory if only a name is provided
+        let mut p = get_tests_dir();
+        let name = if filename.ends_with(".ts") { filename } else { format!("{}.ts", filename) };
+        p.push(name);
+        p
+    };
+
     fs::write(path, code).map_err(|e| e.to_string())?;
     Ok("Saved Successfully".into())
 }

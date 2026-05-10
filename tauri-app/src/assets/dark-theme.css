@@ -1,0 +1,351 @@
+/* Onyx Dark Theme - Deep Neutrals */
+html.dark {
+    /* Main Backgrounds */
+    --d-bg-root: #0a0a0b;       /* Deepest black-grey */
+    --d-bg-panel: #111113;      /* Sidebar/Header background */
+    --d-bg-surface: #17171a;    /* Cards/Inputs background */
+    --d-bg-hover: #1f1f23;      /* Hover state (Subtle) */
+    
+    /* Borders & Dividers */
+    --d-border: #242427;        /* Muted border */
+    --d-border-active: #3f3f46; /* Focused border */
+    
+    /* Text Colors */
+    --d-text-main: #e2e2e5;     /* Soft white/grey */
+    --d-text-muted: #71717a;    /* Dimmed text (Zinc-500) */
+    --d-text-dim: #434348;      /* Very dark grey for separators */
+    
+    /* Functional Colors */
+    --d-accent: #6366f1;        /* Indigo */
+    --d-danger-bg: #2d1616;     /* Muted dark red */
+    --d-danger-text: #f87171;   /* Pale red */
+    --d-success-bg: #11221a;    /* Muted dark green */
+    --d-success-text: #4ade80;  /* Pale green */
+
+    --d-bg-deep: #09090b;
+    --d-bg-card: #18181b;
+    --d-accent-text: #818cf8;
+}
+
+/* 1. RUN BUTTONS (Saved View) */
+html.dark .run-btn {
+    background: #064e3b !important; /* Very dark forest green */
+    color: #4ade80 !important;      /* Pale emerald text */
+    border: 1px solid #065f46 !important;
+}
+
+html.dark .run-btn:hover {
+    background: #065f46 !important;
+    color: #d1fae5 !important;
+}
+
+/* 2. SEARCH & COUNT BADGES */
+html.dark .clear-search, 
+html.dark .clear-btn {
+    background: var(--d-bg-card) !important;
+    color: #71717a !important;
+}
+
+html.dark .clear-search:hover {
+    background: var(--d-border) !important;
+    color: white !important;
+}
+
+html.dark .count-badge,
+html.dark .step-badge {
+    background: #18181b !important;
+    color: #a1a1aa !important;
+    border: 1px solid var(--d-border) !important;
+}
+
+/* 3. TAB SWITCHER (Top Left) */
+html.dark .tab-switcher {
+    background: var(--d-bg-deep) !important;
+    border: 1px solid var(--d-border) !important;
+}
+
+html.dark .tab-switcher button {
+    color: #71717a !important;
+}
+
+html.dark .tab-switcher button.active {
+    background: var(--d-bg-card) !important;
+    color: var(--d-accent-text) !important;
+}
+
+/* 4. FORM ELEMENTS (Inputs/Selects/Textareas) */
+html.dark .styled-input, 
+html.dark .styled-select, 
+html.dark .styled-textarea {
+    background: var(--d-bg-deep) !important;
+    border: 1px solid var(--d-border) !important;
+    color: #fafafa !important;
+}
+
+html.dark .styled-input:focus, 
+html.dark .styled-select:focus, 
+html.dark .styled-textarea:focus {
+    border-color: var(--d-accent) !important;
+}
+
+/* 5. ACTION LINKS & TAGS (Properties Sidebar) */
+html.dark .browse-link {
+    background: #1e1e22 !important;
+    color: var(--d-accent-text) !important;
+    border: 1px solid var(--d-border) !important;
+}
+
+html.dark .action-tag {
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: var(--d-accent-text) !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+/* 6. PASTE FLOATING BUTTON */
+html.dark .paste-fab {
+    background: var(--d-bg-surface) !important;
+    border: 1px dashed var(--d-accent) !important;
+    color: var(--d-accent-text) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
+}
+
+html.dark .paste-fab:hover {
+    background: var(--d-bg-card) !important;
+    transform: translateY(-2px);
+}
+
+/* 7. CHECKBOXES (Force Dark Style) */
+html.dark input[type="checkbox"] {
+    cursor: pointer;
+    filter: invert(0.9) hue-rotate(180deg) brightness(0.8);
+}
+
+/* 8. SCROLLBARS */
+html.dark ::-webkit-scrollbar-thumb {
+    background: #27272a !important;
+}
+
+/* 9. SELECTORS/DROPDOWN ARROW FIX */
+html.dark select.styled-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-position: right 0.5rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.5em 1.5em !important;
+    padding-right: 2.5rem !important;
+    appearance: none;
+}
+
+/* 1. GLOBAL LAYOUT OVERRIDES */
+html.dark, 
+html.dark body, 
+html.dark .editor-layout,
+html.dark .main-canvas,
+html.dark .canvas-content,
+html.dark .workspace-area,
+html.dark .saved-view {
+    background-color: var(--d-bg-root) !important;
+    color: var(--d-text-main) !important;
+}
+
+/* 2. PANELS & NAVIGATION */
+html.dark .sidebar-left, 
+html.dark .sidebar-right,
+html.dark .toolbar,
+html.dark .console-drawer {
+    background: var(--d-bg-panel) !important;
+    border-color: var(--d-border) !important;
+}
+
+html.dark .header-section,
+html.dark .footer-actions,
+html.dark .console-header,
+html.dark .editor-tools {
+    border-color: var(--d-border) !important;
+    background: transparent !important;
+}
+
+/* 3. ELEMENTS & CARDS */
+html.dark .step-card,
+html.dark .saved-card {
+    background: var(--d-bg-surface) !important;
+    border-color: var(--d-border) !important;
+}
+
+html.dark .step-card.active {
+    border-color: var(--d-accent) !important;
+    background: var(--d-bg-hover) !important;
+}
+
+html.dark .step-badge {
+    background: var(--d-bg-root) !important;
+    color: var(--d-text-muted) !important;
+}
+
+/* 4. BUTTONS & HOVERS (No Bright Greys) */
+html.dark .action-item:hover,
+html.dark .tool-icon-btn:hover,
+html.dark .tool-btn:hover,
+html.dark .op-btn:hover {
+    background: var(--d-bg-hover) !important;
+    color: var(--d-accent) !important;
+}
+
+html.dark .tool-icon-btn.active {
+    background: var(--d-bg-hover) !important;
+    color: var(--d-accent) !important;
+    border-color: var(--d-border-active) !important;
+}
+
+/* Excel Button - Muted Green */
+html.dark .xl-sidebar-active,
+html.dark .xl-sidebar-btn:hover {
+    background: var(--d-success-bg) !important;
+    color: var(--d-success-text) !important;
+    border-color: #065f46 !important;
+}
+
+/* Reset/Delete Buttons - Muted Red */
+html.dark .reset-designer-btn,
+html.dark .del-script-btn:hover,
+html.dark .del-btn:hover {
+    background: var(--d-danger-bg) !important;
+    color: var(--d-danger-text) !important;
+    border-color: #7f1d1d !important;
+}
+
+/* 5. FORM INPUTS & SELECTORS */
+html.dark .styled-input,
+html.dark .styled-select,
+html.dark .styled-textarea,
+html.dark .search-wrapper,
+html.dark .console-search,
+html.dark .find-box,
+html.dark .find-container {
+    background: var(--d-bg-root) !important;
+    border: 1px solid var(--d-border) !important;
+    color: var(--d-text-main) !important;
+}
+
+/* Force checkboxes to be dark */
+html.dark input[type="checkbox"] {
+    accent-color: var(--d-accent);
+    filter: invert(1) hue-rotate(180deg) brightness(0.7);
+}
+
+/* 6. CONSOLE SPECIFICS */
+html.dark .console-body {
+    background: var(--d-bg-root) !important;
+}
+
+html.dark .action-id {
+    background: #1e1e22 !important;
+    color: #818cf8 !important;
+}
+
+html.dark .text-dim,
+html.dark .search-empty {
+    color: var(--d-text-muted) !important;
+}
+
+/* 7. SCROLLBARS (Dark & Discrete) */
+html.dark ::-webkit-scrollbar-thumb {
+    background: #2a2a2e !important;
+    border: 2px solid var(--d-bg-root);
+}
+
+html.dark ::-webkit-scrollbar-track {
+    background: var(--d-bg-root) !important;
+}
+
+/* 8. UI WIDGETS */
+html.dark .tab-switcher {
+    background: var(--d-bg-root) !important;
+    border: 1px solid var(--d-border);
+}
+
+html.dark .tab-switcher button.active {
+    background: var(--d-bg-surface) !important;
+    color: var(--d-accent) !important;
+}
+
+html.dark .tip-box {
+    background: #111116 !important;
+    border: 1px solid var(--d-accent) !important;
+    color: var(--d-text-muted) !important;
+}
+
+html.dark .separator, 
+html.dark .separator-light {
+    background-color: var(--d-border) !important;
+    height: 1px !important;
+}
+
+html.dark .global-config-top {
+    background: var(--d-bg-panel) !important;
+    border: 1px solid var(--d-border) !important;
+}
+
+/* FABs and Overlays */
+html.dark .scroll-top-fab,
+html.dark .scroll-fab,
+html.dark .floating-scroll-actions {
+    background: var(--d-bg-surface) !important;
+    border: 1px solid var(--d-border) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+}
+
+/* Labels and Headings */
+html.dark label,
+html.dark h3,
+html.dark .brand {
+    color: var(--d-text-muted) !important;
+}
+
+/* Resizer Handles (Keep invisible until hover) */
+html.dark .resizer-h,
+html.dark .resize-handle {
+    background: transparent;
+}
+
+html.dark .resizer-h:hover,
+html.dark .resize-handle:hover {
+    background: var(--d-accent) !important;
+}
+
+html.dark .search-wrapper,
+html.dark .console-search,
+html.dark .find-box {
+    background-color: #09090b !important;
+    border: 1px solid #27272a !important;
+}
+
+/* Fix for the Search Text being black */
+html.dark .search-input,
+html.dark .find-input {
+    background: transparent !important; /* Use wrapper background */
+    color: #fafafa !important;           /* Light text */
+    border: none !important;
+}
+
+/* Fix for Numeric Arrows */
+html.dark .styled-input {
+    background-color: #09090b !important;
+    color: #fafafa !important;
+    color-scheme: dark;
+}
+
+/* Hover effect for numeric arrows */
+html.dark .styled-input:hover::-webkit-inner-spin-button {
+    filter: invert(1) brightness(1);
+}
+
+/* Ensure the 'X' (Clear) button in search doesn't look white */
+html.dark .clear-search {
+    background: #18181b !important;
+    color: #a1a1aa !important;
+}
+
+html.dark .clear-search:hover {
+    background: #27272a !important;
+    color: #ef4444 !important;
+}

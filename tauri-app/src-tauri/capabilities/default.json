@@ -13,6 +13,8 @@
     "core:tray:default",
     "opener:default",
     "dialog:allow-open",
+    "shell:allow-execute",
+    "dialog:allow-save",
     "dialog:allow-message", 
     "dialog:allow-ask"
   ]
