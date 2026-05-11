@@ -1,4 +1,8 @@
 export class ScriptGenerator {
+    /**
+     * Generates a Playwright script from a Workflow object.
+     * Includes an embedded Metadata header to allow the App to reconstruct designer cards.
+     */
     public static generate(workflow: any): string {
         const steps = workflow.steps;
         const webActions = ['navigate', 'click', 'fill', 'download', 'upload', 'wait_for', 'keyboard_press'];
@@ -6,14 +10,32 @@ export class ScriptGenerator {
         const needsExcel = workflow.config.useExcel && workflow.config.excelPath;
         const needsFS = steps.some((s: any) => ['move', 'mkdir'].includes(s.action));
 
-        let code = `import path from 'path';\n`;
+        // 1. GENERATE METADATA (For System Recognition & Card Loading)
+        // We strip unnecessary UI state and encode to Base64 to prevent easy manual editing
+        const metadata = {
+            name: workflow.name,
+            config: workflow.config,
+            steps: workflow.steps,
+            version: "1.0"
+        };
+        const encodedMetadata = btoa(JSON.stringify(metadata));
+
+        let code = `/**\n`;
+        code += ` * @generated-by AutomationApp\n`;
+        code += ` * @description DO NOT MODIFY THE METADATA LINE BELOW. IT IS USED TO LOAD DESIGNER CARDS.\n`;
+        code += ` * @metadata ${encodedMetadata}\n`;
+        code += ` */\n\n`;
+
+        // 2. IMPORTS
+        code += `import path from 'path';\n`;
         if (needsWeb) code += `import { chromium } from 'playwright';\n`;
         if (needsExcel) code += `import ExcelJS from 'exceljs';\n`;
         if (needsFS) code += `import fs from 'fs-extra';\n`;
 
+        // 3. TUI HELPER
         code += `\nconst logTask = (status, id, msg) => console.log(\`TASK:\${status}:\${id}:\${msg || ''}\`);\n`;
-        code += `\n/** Generated Task: ${workflow.name} */\n`;
 
+        // 4. HELPERS
         const val = (str: string) => {
             if (!str) return '';
             const sanitized = str.replace(/\\/g, '/');
@@ -37,6 +59,7 @@ export class ScriptGenerator {
                 case 'text': base = `page.getByText('${matchValue}', { exact: ${isExact} })`; break;
                 case 'placeholder': base = `page.getByPlaceholder('${matchValue}', { exact: ${isExact} })`; break;
                 case 'label': base = `page.getByLabel('${matchValue}', { exact: ${isExact} })`; break;
+                case 'css': base = `page.locator('${matchValue}')`; break;
                 default: base = `page.locator('${matchValue}')`;
             }
             return `${base}.nth(${index})`;
@@ -66,17 +89,18 @@ export class ScriptGenerator {
             }).join('\n');
         };
 
-        code += `async function run() {\n`;
-        code += `  let browser = null;\n`; // Keep browser reference for cleanup
+        // 5. RUN FUNCTION STRUCTURE
+        code += `\nasync function run() {\n`;
+        code += `  let browser = null;\n`;
 
         code += `  try {\n`;
         if (needsWeb) {
             code += `    logTask('START', 'BROWSER', 'Initializing Browser...');\n`;
             code += `    browser = await chromium.launch({\n`;
             code += `      headless: ${workflow.config.headless},\n`;
-            code += `      handleSIGINT: true,\n`;  // CRITICAL: Die if parent dies
-            code += `      handleSIGTERM: true,\n`; // CRITICAL: Die if parent dies
-            code += `      handleSIGHUP: true\n`;   // CRITICAL: Die if parent dies
+            code += `      handleSIGINT: true,\n`;
+            code += `      handleSIGTERM: true,\n`;
+            code += `      handleSIGHUP: true\n`;
             code += `    });\n`;
             code += `    const page = await browser.newPage();\n`;
             code += `    logTask('DONE', 'BROWSER');\n`;

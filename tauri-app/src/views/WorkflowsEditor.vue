@@ -83,15 +83,23 @@ const dynamicGrid = computed(() => {
 });
 
 onMounted(async () => {
+  await auth.restoreTempTask();
   await auth.refreshSaved();
   await listen('automation-log', (e) => auth.handleIncomingLog(e.payload as string));
   await listen('automation-finished', () => {
     auth.handleIncomingLog(`TASK:DONE:EXECUTION`);
     auth.isProcessing.value = false;
+    auth.runningFilePath.value = null;
   });
 });
 
-watch(finalCode, async (val) => { await invoke('auto_save_temp', { code: val }); });
+watch(finalCode, async (newCode) => {
+  try {
+    await invoke('auto_save_temp', { code: newCode });
+  } catch (err) {
+    console.error("Auto-save failed", err);
+  }
+}, { deep: true });
 </script>
 
 <template>
@@ -127,10 +135,27 @@ watch(finalCode, async (val) => { await invoke('auto_save_temp', { code: val });
 
       <div class="workspace-area">
         <section v-if="activeTab === 'editor'" class="canvas-content">
-           <StepDesigner :workflow="workflow" v-model:selectedIndex="selectedStepIndex" :clipboardStep="clipboardStep" @copy="auth.handleCopy" @paste="auth.handlePaste" />
+           <StepDesigner 
+             :workflow="workflow" 
+             v-model:selectedIndex="selectedStepIndex"
+             :clipboardStep="clipboardStep"
+             :copiedSourceId="auth.copiedSourceId.value" 
+             @copy="auth.handleCopy"
+             @paste="auth.handlePaste"
+             @cancel-copy="auth.cancelCopy" 
+            />
         </section>
         <ScriptEditor v-else-if="activeTab === 'preview'" v-model="finalCode" :isManualEdit="isManualEdit" @reset="isManualEdit = false" />
-        <SavedScriptsList v-else-if="activeTab === 'saved'" :savedScripts="savedScripts" @load="auth.loadScript" @run="auth.handleRunManual" @delete="auth.handleDelete" />
+        <SavedScriptsList 
+          v-else-if="activeTab === 'saved'" 
+          :savedScripts="savedScripts"
+          :currentOpenedPath="auth.currentOpenedPath.value"
+          :isModified="auth.isModified.value"
+          :runningFilePath="auth.runningFilePath.value"
+          @load="auth.loadScript"
+          @run="auth.handleRunManual"
+          @delete="auth.handleDelete"
+        />
       </div>
 
       <ConsoleDrawer 

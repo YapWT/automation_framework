@@ -18,6 +18,17 @@ export function useAutomation() {
     const clipboardStep = ref<any>(null);
     const leftSidebarCollapsed = ref(false);
     const rightSidebarCollapsed = ref(false);
+    const copiedSourceId = ref<number | null>(null);
+    const currentOpenedPath = ref<string | null>(null);
+    const lastSavedCode = ref(""); // Track code exactly as it is on disk
+    const runningFilePath = ref<string | null>(null); // Track which file is executing
+
+    // Computed to check if the current editor content differs from the disk version
+    const isModified = computed(() => {
+        if (!currentOpenedPath.value) return false;
+        // Compare current generated/manual code with the baseline from the file
+        return finalCode.value.trim() !== lastSavedCode.value.trim();
+    });
 
     const finalCode = computed({
         get: () => isManualEdit.value ? manualCode.value : ScriptGenerator.generate(workflow.value),
@@ -27,8 +38,6 @@ export function useAutomation() {
     const activeStep = computed(() =>
         selectedStepIndex.value !== null ? workflow.value.steps[selectedStepIndex.value] : null
     );
-
-    const currentOpenedPath = ref<string | null>(null);
 
     function addStep(type: string) {
         isManualEdit.value = false;
@@ -66,9 +75,10 @@ export function useAutomation() {
     function resetDesigner() {
         workflow.value.steps = [];
         selectedStepIndex.value = null;
-        clipboardStep.value = null;
         workflow.value.config.excelPath = "";
         workflow.value.config.useExcel = false;
+        cancelCopy();
+        currentOpenedPath.value = null;
     }
 
     function handleIncomingLog(rawLog: string) {
@@ -116,17 +126,32 @@ export function useAutomation() {
     }
 
     function handleCopy(step: any) {
-        // Deep clone the step so changes to the original don't affect the copy
         clipboardStep.value = JSON.parse(JSON.stringify(step));
+        copiedSourceId.value = step.id; // Store the ID of the original card
     }
 
-    function handlePaste() {
+    function handlePaste(index?: number) {
         if (clipboardStep.value) {
             const newStep = JSON.parse(JSON.stringify(clipboardStep.value));
-            // Assign a new unique ID
             newStep.id = Date.now();
-            workflow.value.steps.push(newStep);
+
+            let targetIndex: number;
+            if (typeof index === 'number') {
+                workflow.value.steps.splice(index, 0, newStep);
+                targetIndex = index;
+            } else {
+                workflow.value.steps.push(newStep);
+                targetIndex = workflow.value.steps.length - 1;
+            }
+
+            // CRITICAL: Auto-select the newly pasted card
+            selectedStepIndex.value = targetIndex;
         }
+    }
+
+    function cancelCopy() {
+        clipboardStep.value = null;
+        copiedSourceId.value = null;
     }
 
     async function handleRun(isTemp: boolean) {
@@ -146,55 +171,44 @@ export function useAutomation() {
 
     async function handleSave() {
         try {
-            // 1. Open the Native File Dialog
             const selectedPath = await save({
                 title: 'Save Automation Script',
-                // If we already opened a file, suggest that path. Otherwise suggest the task name.
                 defaultPath: currentOpenedPath.value || `${workflow.value.name}.ts`,
                 filters: [{ name: 'TypeScript', extensions: ['ts'] }]
             });
-
-            // 2. User cancelled
             if (!selectedPath) return;
 
-            // 3. Call Rust with the FULL path returned by the dialog
             await invoke('save_permanent_script', {
                 code: finalCode.value,
                 filename: selectedPath
             });
 
-            // 4. Update internal state
             const filename = selectedPath.split(/[\\/]/).pop() || 'task.ts';
             workflow.value.name = filename.replace('.ts', '');
-            currentOpenedPath.value = selectedPath; // Remember this path for next time
+            currentOpenedPath.value = selectedPath;
+
+            // SYNC: Update last saved code to clear the "Modified" hint
+            lastSavedCode.value = finalCode.value;
+            isModified.value;
 
             await refreshSaved();
             await message("Script saved successfully", { title: "Success", kind: "info" });
         } catch (err) {
-            console.error("Save failed:", err);
             handleIncomingLog(`TASK:FAIL:SYSTEM:Save failed: ${err}`);
         }
     }
 
     async function stopAutomation() {
         try {
-            // 1. Tell Rust to kill the process tree
             await invoke('stop_script');
-
-            // 2. Manually clean up UI state
             isProcessing.value = false;
+            runningFilePath.value = null; // CLEAR the running hint on terminate
 
-            // 3. Mark the main runner as failed/stopped in the console
-            handleIncomingLog("TASK:FAIL:EXECUTION:Stopped by User");
-
-            // 4. Force all other running tasks to "error" state so spinners stop
+            handleIncomingLog("TASK:FAIL:EXECUTION:Terminated by User");
             tasks.value.forEach(t => {
                 if (t.status === 'running') t.status = 'error';
             });
-
-        } catch (err) {
-            console.error("Stop failed:", err);
-        }
+        } catch (err) { console.error(err); }
     }
 
     async function toggleRecording() {
@@ -218,15 +232,41 @@ export function useAutomation() {
         tasks.value = [];
         showConsole.value = true;
         isProcessing.value = true;
-        const executionId = "EXECUTION";
+        runningFilePath.value = file; // Set hint to RUNNING
 
         try {
-            handleIncomingLog(`TASK:START:${executionId}:Running saved script: ${file}`);
-            // This calls your Rust backend
+            handleIncomingLog(`TASK:START:EXECUTION:Running script: ${file}`);
             await invoke('execute_script', { filename: file });
         } catch (err) {
-            handleIncomingLog(`TASK:FAIL:${executionId}:Failed to run ${file}`);
             isProcessing.value = false;
+            runningFilePath.value = null; // Clear hint if failed to start
+        }
+    }
+
+    async function restoreTempTask() {
+        try {
+            const code = await invoke('read_script_content', { filename: 'temp_task.ts' }) as string;
+            if (!code || code.trim() === "") return;
+
+            // Use the same metadata regex from loadScript
+            const match = code.match(/@metadata\s([A-Za-z0-9+/=]+)/);
+
+            if (match && match[1]) {
+                const decodedData = JSON.parse(atob(match[1]));
+
+                // Only restore if there are actually steps (don't overwrite default empty state with nothing)
+                if (decodedData.steps && decodedData.steps.length > 0) {
+                    workflow.value.steps = decodedData.steps;
+                    workflow.value.config = decodedData.config;
+                    workflow.value.name = decodedData.name || "recovered_task";
+                    // Stay in editor mode so user sees their cards
+                    activeTab.value = 'editor';
+                    console.log("Restored unsaved progress from temp_task.ts");
+                }
+            }
+        } catch (e) {
+            // Temp file might not exist yet, which is fine
+            console.log("No previous temp session found.");
         }
     }
 
@@ -248,20 +288,34 @@ export function useAutomation() {
     }
 
     async function loadScript(file: string) {
-        const code = await invoke('read_script_content', { filename: file });
-        manualCode.value = code as string;
-        isManualEdit.value = true;
-        activeTab.value = 'preview'; // Switch to editor
-        workflow.value.name = file.replace('.ts', '');
+        const code = await invoke('read_script_content', { filename: file }) as string;
+
         currentOpenedPath.value = file;
+        lastSavedCode.value = code; // Snapshot the file content
+
+        const match = code.match(/@metadata\s([A-Za-z0-9+/=]+)/);
+        if (match && match[1]) {
+            try {
+                const decodedData = JSON.parse(atob(match[1]));
+                workflow.value.steps = decodedData.steps;
+                workflow.value.config = decodedData.config;
+                workflow.value.name = decodedData.name;
+                isManualEdit.value = false;
+                activeTab.value = 'editor';
+            } catch (e) { console.error("Metadata parse error"); }
+        } else {
+            manualCode.value = code;
+            isManualEdit.value = true;
+            activeTab.value = 'preview';
+        }
     }
 
     return {
-        leftSidebarCollapsed, rightSidebarCollapsed,
+        leftSidebarCollapsed, rightSidebarCollapsed, copiedSourceId, isModified, runningFilePath,
         STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isRecording, isProcessing, showConsole,
         isManualEdit, manualCode, selectedStepIndex, clipboardStep, finalCode, activeStep, currentOpenedPath,
         handleCopy, handlePaste, handleIncomingLog, refreshSaved, handleRun, handleRunManual,
         handleSave, stopAutomation, toggleRecording, handleDelete, loadScript, addStep, selectExcel,
-        resetDesigner,
+        resetDesigner, cancelCopy, restoreTempTask
     };
 }

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { FileCode, Trash2, FolderSearch, Search, X } from 'lucide-vue-next';
+import { FileCode, Trash2, FolderSearch, Search, X, Clock, Edit3, Eye } from 'lucide-vue-next';
 
 const props = defineProps<{
-  savedScripts: string[]
+  savedScripts: string[],
+  currentOpenedPath: string | null,
+  isModified: boolean,
+  runningFilePath: string | null
 }>();
 
 const emit = defineEmits(['load', 'run', 'delete']);
 
-// 1. Local Search State
 const searchQuery = ref("");
-
-// 2. Filter Logic
 const filteredFiles = computed(() => {
   if (!searchQuery.value) return props.savedScripts;
   const q = searchQuery.value.toLowerCase();
@@ -21,40 +21,51 @@ const filteredFiles = computed(() => {
 
 <template>
   <section class="saved-view">
-    <!-- SEARCH HEADER -->
     <div class="saved-header">
       <div class="search-wrapper">
         <Search size="16" class="search-icon" />
-        <input 
-          v-model="searchQuery" 
-          placeholder="Search saved scripts..." 
-          class="search-input"
-        />
-        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
-          <X size="14" />
-        </button>
+        <input v-model="searchQuery" placeholder="Search saved scripts..." class="search-input" />
+        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search"><X size="14" /></button>
       </div>
-      <div class="count-badge">{{ filteredFiles.length }} scripts</div>
     </div>
 
-    <!-- Empty State (No Files at all) -->
-    <div v-if="savedScripts.length === 0" class="empty-saved">
+    <div v-if="filteredFiles.length === 0" class="empty-saved">
       <FolderSearch size="48" class="opacity-10 mb-4" />
-      <p>No saved scripts found.</p>
+      <p>No scripts match your search.</p>
     </div>
 
-    <!-- Empty State (No Search Results) -->
-    <div v-else-if="filteredFiles.length === 0" class="empty-saved">
-      <Search size="48" class="opacity-10 mb-4" />
-      <p>No scripts match "{{ searchQuery }}"</p>
-    </div>
-
-    <!-- Grid of Filtered Scripts -->
     <div v-else class="saved-grid">
-      <div v-for="file in filteredFiles" :key="file" class="saved-card">
+      <div v-for="file in filteredFiles" :key="file" 
+           class="saved-card" 
+           :class="{ 
+             'is-active': file === currentOpenedPath,
+             'is-running': file === runningFilePath 
+           }">
+        
         <div class="file-main-info">
           <FileCode size="20" class="text-indigo-500 shrink-0" />
-          <span class="file-name" :title="file">{{ file }}</span>
+          <div class="flex flex-col overflow-hidden">
+            <span class="file-name" :title="file">{{ file }}</span>
+            
+            <!-- HINTS / BADGES -->
+            <!-- Inside the v-for loop of SavedScriptsList.vue -->
+            <div class="hints-row">
+            <!-- 1. Show RUNNING if it's currently executing -->
+            <span v-if="file === runningFilePath" class="hint-badge running">
+              <span class="pulse-dot"></span> RUNNING
+            </span>
+      
+            <!-- 2. If it's the open file AND it has been changed, show MODIFIED -->
+            <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified">
+              <Edit3 size="10" /> MODIFIED
+            </span>
+      
+            <!-- 3. If it's just the open file and NOT changed, show OPENING -->
+            <span v-else-if="file === currentOpenedPath" class="hint-badge active">
+              <Eye size="10" /> OPENING
+            </span>
+          </div>
+        </div>
         </div>
 
         <div class="file-ops">
@@ -70,6 +81,36 @@ const filteredFiles = computed(() => {
 </template>
 
 <style scoped>
+.hints-row { display: flex; gap: 6px; margin-top: 4px; }
+
+.hint-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hint-badge.active { background: #eef2ff; color: #6366f1; }
+.hint-badge.modified { background: #fff7ed; color: #f97316; }
+.hint-badge.running { background: #ecfdf5; color: #10b981; }
+
+.pulse-dot {
+  width: 6px; height: 6px; background: #10b981; border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.is-active { border-color: #6366f1 !important; background: #f8faff !important; }
+.is-running { border-color: #10b981 !important; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+
 .saved-view {
   padding: 1.5rem 2rem;
   overflow-y: auto;
