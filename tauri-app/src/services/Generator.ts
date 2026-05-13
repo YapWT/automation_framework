@@ -1,8 +1,4 @@
 export class ScriptGenerator {
-    /**
-     * Generates a Playwright script from a Workflow object.
-     * Includes an embedded Metadata header to allow the App to reconstruct designer cards.
-     */
     public static generate(workflow: any): string {
         const steps = workflow.steps;
         const webActions = ['navigate', 'click', 'fill', 'download', 'upload', 'wait_for', 'keyboard_press'];
@@ -10,37 +6,27 @@ export class ScriptGenerator {
         const needsExcel = workflow.config.useExcel && workflow.config.excelPath;
         const needsFS = steps.some((s: any) => ['move', 'mkdir'].includes(s.action));
 
-        // 1. GENERATE METADATA (For System Recognition & Card Loading)
-        // We strip unnecessary UI state and encode to Base64 to prevent easy manual editing
-        const metadata = {
-            name: workflow.name,
-            config: workflow.config,
-            steps: workflow.steps,
-            version: "1.0"
-        };
+        const metadata = { name: workflow.name, config: workflow.config, steps: workflow.steps, version: "1.0" };
         const encodedMetadata = btoa(JSON.stringify(metadata));
 
-        let code = `/**\n`;
-        code += ` * @generated-by AutomationApp\n`;
-        code += ` * @description DO NOT MODIFY THE METADATA LINE BELOW. IT IS USED TO LOAD DESIGNER CARDS.\n`;
-        code += ` * @metadata ${encodedMetadata}\n`;
-        code += ` */\n\n`;
-
-        // 2. IMPORTS
+        let code = `/**\n * @generated-by AutomationApp\n * @metadata ${encodedMetadata}\n */\n\n`;
         code += `import path from 'path';\n`;
         if (needsWeb) code += `import { chromium } from 'playwright';\n`;
-        if (needsExcel) code += `import ExcelJS from 'exceljs';\n`;
+
+        // FIX: Import full XLSX object
+        if (needsExcel) code += `import * as XLSX from 'xlsx';\n`;
+
         if (needsFS) code += `import fs from 'fs-extra';\n`;
 
-        // 3. TUI HELPER
         code += `\nconst logTask = (status, id, msg) => console.log(\`TASK:\${status}:\${id}:\${msg || ''}\`);\n`;
 
-        // 4. HELPERS
         const val = (str: string) => {
             if (!str) return '';
-            const sanitized = str.replace(/\\/g, '/');
+            let sanitized = str.replace(/\\/g, '/');
             if (needsExcel) {
-                return sanitized.replace(/{{(.*?)}}/g, (_: any, g: any) => `\${rowData['${g.trim()}'] || ''}`);
+                return sanitized.replace(/{{(.*?)}}/g, (_: any, g: any) => {
+                    return `\${rowData['${g.trim()}'] || ''}`;
+                });
             }
             return sanitized;
         };
@@ -70,9 +56,8 @@ export class ScriptGenerator {
                 const p = step.params;
                 const options = `{ force: ${p.force || false}, timeout: ${p.timeout || 30000} }`;
                 const stepId = `${step.action.toUpperCase()}_${index + 1}`;
-                const logDesc = `${step.action.toUpperCase()}: ${val(p.selector || p.url || p.key || 'action')}`.replace(/"/g, '\\"');
-
-                let logic = `${indent}logTask('START', '${stepId}', \`${logDesc}\`);\n`;
+                const actionDesc = `${step.action.toUpperCase()}: ${p.selector || p.url || p.key || 'Action'}`;
+                let logic = `${indent}logTask('START', '${stepId}', \`${actionDesc}\`);\n`;
 
                 switch (step.action) {
                     case 'navigate': logic += `${indent}await page.goto('${val(p.url)}', { waitUntil: 'networkidle', timeout: 60000 });`; break;
@@ -89,65 +74,55 @@ export class ScriptGenerator {
             }).join('\n');
         };
 
-        // 5. RUN FUNCTION STRUCTURE
-        code += `\nasync function run() {\n`;
-        code += `  let browser = null;\n`;
+        code += `\nasync function run() {\n  let browser = null;\n  try {\n`;
 
-        code += `  try {\n`;
         if (needsWeb) {
-            code += `    logTask('START', 'BROWSER', 'Initializing Browser...');\n`;
-            code += `    browser = await chromium.launch({\n`;
-            code += `      headless: ${workflow.config.headless},\n`;
-            code += `      handleSIGINT: true,\n`;
-            code += `      handleSIGTERM: true,\n`;
-            code += `      handleSIGHUP: true\n`;
-            code += `    });\n`;
-            code += `    const page = await browser.newPage();\n`;
+            code += `    logTask('START', 'BROWSER', 'Launching Browser...');\n`;
+            code += `    browser = await chromium.launch({ headless: ${workflow.config.headless}, handleSIGINT: true, handleSIGTERM: true, handleSIGHUP: true });\n`;
+            code += `    const context = await browser.newContext();\n`;
+            code += `    const page = await context.newPage();\n`;
             code += `    logTask('DONE', 'BROWSER');\n`;
         }
 
         if (needsExcel) {
-            const p = workflow.config.excelPath.replace(/\\/g, '/');
-            const isCsv = p.toLowerCase().endsWith('.csv');
+            const excelPath = workflow.config.excelPath.replace(/\\/g, '/');
             code += `
-    logTask('START', 'EXCEL', 'Loading Data Source...');
-    const workbook = new ExcelJS.Workbook();
-    ${isCsv ? `await workbook.csv.readFile('${p}');` : `await workbook.xlsx.readFile('${p}');`}
-    const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
-    const headers: string[] = [];
-    sheet.getRow(1).eachCell((c, n) => { headers[n] = c.value?.toString().trim() || ''; });
-    logTask('DONE', 'EXCEL');
+    logTask('START', 'DATA_LOAD', 'Parsing Spreadsheet Data...');
+    let jsonData = [];
+    try {
+        // FIX: Logic to handle both standard and ESM-wrapped exports
+        const sheetLib = (XLSX as any).readFile ? XLSX : (XLSX as any).default;
+        if (!sheetLib || !sheetLib.readFile) throw new Error("Could not initialize XLSX library");
 
-    for (let i = 2; i <= sheet.rowCount; i++) {
-      const rowId = \`ROW_\${i-1}\`;
-      const row = sheet.getRow(i); const rowData: any = {};
-      headers.forEach((h, idx) => { if(h) rowData[h] = row.getCell(idx).value?.toString() || ''; });
-      
+        const workbook = sheetLib.readFile('${excelPath}');
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        jsonData = sheetLib.utils.sheet_to_json(worksheet, { defval: "" });
+        logTask('DONE', 'DATA_LOAD');
+    } catch (excelErr: any) {
+        logTask('FAIL', 'DATA_LOAD', excelErr.message);
+        throw excelErr;
+    }
+
+    for (let i = 0; i < jsonData.length; i++) {
+      const rowData: any = jsonData[i];
+      const rowId = 'ROW_' + (i + 1);
       try {
-        logTask('START', rowId, \`Processing Data Row \${i-1}\`);
-  ${getStepLogic('        ')}
+        logTask('START', rowId, \`Processing Row \${i+1} | Data: \${JSON.stringify(rowData)}\`);
+${getStepLogic('        ')}
         logTask('DONE', rowId);
       } catch (e: any) {
-        logTask('FAIL', rowId, e?.message || e);
+        logTask('FAIL', rowId, e.message);
       }
     }\n`;
         } else {
-            code += `    ${getStepLogic('    ')}\n`;
-            code += `    logTask('DONE', 'FINISH', 'Automation finished successfully.');\n`;
+            code += `    try {\n${getStepLogic('      ')}\n      logTask('DONE', 'FINISH', 'Complete');\n    } catch(e: any) { logTask('FAIL', 'EXECUTION', e.message); }\n`;
         }
 
-        code += `  } catch (e: any) {\n`;
-        code += `    logTask('FAIL', 'ERROR', e.message);\n`;
-        code += `  } finally {\n`;
+        code += `  } catch (e: any) {\n    logTask('FAIL', 'EXECUTION', e.message);\n  } finally {\n`;
         if (needsWeb) {
-            code += `    if (browser) {\n`;
-            code += `      logTask('START', 'CLEANUP', 'Closing Browser...');\n`;
-            code += `      await browser.close();\n`;
-            code += `      logTask('DONE', 'CLEANUP');\n`;
-            code += `    }\n`;
+            code += `    if (browser) { \n      logTask('START', 'CLEANUP', 'Closing...');\n      await browser.close(); \n      logTask('DONE', 'CLEANUP'); \n    }\n`;
         }
-        code += `  }\n`;
-        code += `}\n\nrun().catch(err => console.log("TASK:FAIL:FATAL:" + err.message));`;
+        code += `  }\n}\n\nrun().catch(err => console.log("TASK:FAIL:FATAL:" + err.message));`;
 
         return code;
     }

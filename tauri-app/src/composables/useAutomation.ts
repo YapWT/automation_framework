@@ -64,7 +64,10 @@ export function useAutomation() {
     async function selectExcel() {
         const selected = await open({
             multiple: false,
-            filters: [{ name: 'Data Source', extensions: ['xlsx', 'csv', 'xls'] }]
+            filters: [{
+                name: 'Spreadsheets',
+                extensions: ['xlsx', 'xls', 'csv', 'ods', 'xlsb', 'numbers']
+            }]
         });
         if (selected) {
             workflow.value.config.excelPath = selected as string;
