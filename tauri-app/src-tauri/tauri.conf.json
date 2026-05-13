@@ -24,12 +24,16 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.icns", "icons/icon.ico"],
+    "resources": [
+      "../automation-engine/node_modules",
+      "../automation-engine/local-browsers",
+      "../automation-engine/tests"
+    ],
+    "externalBin": [
+      "bin/node"
     ]
-  }
+  },
+  "productName": "AutomationPro",
+  "identifier": "com.yourname.automation"
 }

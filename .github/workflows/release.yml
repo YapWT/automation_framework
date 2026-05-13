@@ -1,0 +1,60 @@
+name: "Publish Release"
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Prepare Sidecars and Browsers
+        shell: bash
+        run: |
+          npm install
+          cd automation-engine && npm install && cd ..
+          
+          # Download browsers locally
+          export PLAYWRIGHT_BROWSERS_PATH=./automation-engine/local-browsers
+          npx playwright install chromium
+          
+          # Inject Sidecar Node binary
+          mkdir -p src-tauri/bin
+          if [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
+          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            cp $(which node) src-tauri/bin/node-aarch64-apple-darwin
+          else
+            cp $(which node) src-tauri/bin/node-x86_64-unknown-linux-gnu
+          fi
+
+      - name: Build and Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "Automation App v__VERSION__"
+          releaseDraft: true
+          args: ${{ matrix.args }}
