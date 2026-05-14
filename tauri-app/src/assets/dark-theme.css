@@ -1,26 +1,40 @@
 /* Onyx Dark Theme - Deep Neutrals */
 html.dark {
     /* Main Backgrounds */
-    --d-bg-root: #0a0a0b;       /* Deepest black-grey */
-    --d-bg-panel: #111113;      /* Sidebar/Header background */
-    --d-bg-surface: #17171a;    /* Cards/Inputs background */
-    --d-bg-hover: #1f1f23;      /* Hover state (Subtle) */
-    
+    --d-bg-root: #0a0a0b;
+    /* Deepest black-grey */
+    --d-bg-panel: #111113;
+    /* Sidebar/Header background */
+    --d-bg-surface: #17171a;
+    /* Cards/Inputs background */
+    --d-bg-hover: #1f1f23;
+    /* Hover state (Subtle) */
+
     /* Borders & Dividers */
-    --d-border: #242427;        /* Muted border */
-    --d-border-active: #3f3f46; /* Focused border */
-    
+    --d-border: #242427;
+    /* Muted border */
+    --d-border-active: #3f3f46;
+    /* Focused border */
+
     /* Text Colors */
-    --d-text-main: #e2e2e5;     /* Soft white/grey */
-    --d-text-muted: #71717a;    /* Dimmed text (Zinc-500) */
-    --d-text-dim: #434348;      /* Very dark grey for separators */
-    
+    --d-text-main: #e2e2e5;
+    /* Soft white/grey */
+    --d-text-muted: #71717a;
+    /* Dimmed text (Zinc-500) */
+    --d-text-dim: #434348;
+    /* Very dark grey for separators */
+
     /* Functional Colors */
-    --d-accent: #6366f1;        /* Indigo */
-    --d-danger-bg: #2d1616;     /* Muted dark red */
-    --d-danger-text: #f87171;   /* Pale red */
-    --d-success-bg: #11221a;    /* Muted dark green */
-    --d-success-text: #4ade80;  /* Pale green */
+    --d-accent: #6366f1;
+    /* Indigo */
+    --d-danger-bg: #2d1616;
+    /* Muted dark red */
+    --d-danger-text: #f87171;
+    /* Pale red */
+    --d-success-bg: #11221a;
+    /* Muted dark green */
+    --d-success-text: #4ade80;
+    /* Pale green */
 
     --d-bg-deep: #09090b;
     --d-bg-card: #18181b;
@@ -29,8 +43,10 @@ html.dark {
 
 /* 1. RUN BUTTONS (Saved View) */
 html.dark .run-btn {
-    background: #064e3b !important; /* Very dark forest green */
-    color: #4ade80 !important;      /* Pale emerald text */
+    background: #064e3b !important;
+    /* Very dark forest green */
+    color: #4ade80 !important;
+    /* Pale emerald text */
     border: 1px solid #065f46 !important;
 }
 
@@ -40,7 +56,7 @@ html.dark .run-btn:hover {
 }
 
 /* 2. SEARCH & COUNT BADGES */
-html.dark .clear-search, 
+html.dark .clear-search,
 html.dark .clear-btn {
     background: var(--d-bg-card) !important;
     color: #71717a !important;
@@ -74,16 +90,16 @@ html.dark .tab-switcher button.active {
 }
 
 /* 4. FORM ELEMENTS (Inputs/Selects/Textareas) */
-html.dark .styled-input, 
-html.dark .styled-select, 
+html.dark .styled-input,
+html.dark .styled-select,
 html.dark .styled-textarea {
     background: var(--d-bg-deep) !important;
     border: 1px solid var(--d-border) !important;
     color: #fafafa !important;
 }
 
-html.dark .styled-input:focus, 
-html.dark .styled-select:focus, 
+html.dark .styled-input:focus,
+html.dark .styled-select:focus,
 html.dark .styled-textarea:focus {
     border-color: var(--d-accent) !important;
 }
@@ -109,7 +125,8 @@ html.dark .step-card.is-copied {
 }
 
 html.dark .step-card.is-copied::after {
-    background: #4f46e5 !important; /* Slightly darker indigo */
+    background: #4f46e5 !important;
+    /* Slightly darker indigo */
 }
 
 html.dark .inline-paste-btn:hover {
@@ -167,8 +184,8 @@ html.dark select.styled-select {
 }
 
 /* 1. GLOBAL LAYOUT OVERRIDES */
-html.dark, 
-html.dark body, 
+html.dark,
+html.dark body,
 html.dark .editor-layout,
 html.dark .main-canvas,
 html.dark .canvas-content,
@@ -179,7 +196,7 @@ html.dark .saved-view {
 }
 
 /* 2. PANELS & NAVIGATION */
-html.dark .sidebar-left, 
+html.dark .sidebar-left,
 html.dark .sidebar-right,
 html.dark .toolbar,
 html.dark .console-drawer {
@@ -305,7 +322,7 @@ html.dark .tip-box {
     color: var(--d-text-muted) !important;
 }
 
-html.dark .separator, 
+html.dark .separator,
 html.dark .separator-light {
     background-color: var(--d-border) !important;
     height: 1px !important;
@@ -322,7 +339,7 @@ html.dark .scroll-fab,
 html.dark .floating-scroll-actions {
     background: var(--d-bg-surface) !important;
     border: 1px solid var(--d-border) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Labels and Headings */
@@ -353,8 +370,10 @@ html.dark .find-box {
 /* Fix for the Search Text being black */
 html.dark .search-input,
 html.dark .find-input {
-    background: transparent !important; /* Use wrapper background */
-    color: #fafafa !important;           /* Light text */
+    background: transparent !important;
+    /* Use wrapper background */
+    color: #fafafa !important;
+    /* Light text */
     border: none !important;
 }
 
@@ -381,8 +400,86 @@ html.dark .clear-search:hover {
     color: #ef4444 !important;
 }
 
-html.dark .hint-badge.active { background: rgba(99, 102, 241, 0.15) !important; color: #818cf8 !important; }
-html.dark .hint-badge.modified { background: rgba(249, 115, 22, 0.15) !important; color: #fb923c !important; }
-html.dark .hint-badge.running { background: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; }
-html.dark .is-active { background: #121215 !important; border-color: #6366f1 !important; }
-html.dark .is-running { border-color: #10b981 !important; }
+html.dark .hint-badge.active {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #818cf8 !important;
+}
+
+html.dark .hint-badge.modified {
+    background: rgba(249, 115, 22, 0.15) !important;
+    color: #fb923c !important;
+}
+
+html.dark .hint-badge.running {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+html.dark .is-active {
+    background: #121215 !important;
+    border-color: #6366f1 !important;
+}
+
+html.dark .is-running {
+    border-color: #10b981 !important;
+}
+
+/* Move Mode Visual Hint */
+html.dark .step-card.move-mode {
+    border-color: #f59e0b !important;
+    /* Amber-500 */
+    background: rgba(245, 158, 11, 0.1) !important;
+    animation: pulse-amber 2s infinite;
+}
+
+@keyframes pulse-amber {
+    0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    }
+}
+
+/* Move Mode Dark Styling */
+html.dark .step-card.is-moving {
+    background: #1c1917 !important;
+    /* Zinc-900 */
+    border: 1px dashed #f59e0b !important;
+    /* Amber-500 */
+}
+
+html.dark .step-card.is-moving::after {
+    background: #d97706 !important;
+    /* Darker amber */
+    color: #fff !important;
+}
+
+html.dark .inline-paste-btn {
+    color: #818cf8 !important;
+}
+
+html.dark .inline-paste-btn:hover {
+    background: #1e1b4b !important;
+    border-color: #4338ca !important;
+}
+
+/* Dark mode keyboard selection */
+html.dark .saved-card.kb-active {
+    background: #111116 !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3) !important;
+}
+
+html.dark .saved-card.is-active {
+    border-color: #7c4746 !important;
+}
+
+html.dark .file-index-label {
+    color: #52525b;
+}

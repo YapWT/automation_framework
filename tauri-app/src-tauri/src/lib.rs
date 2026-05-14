@@ -1,50 +1,36 @@
 mod runtime;
-use rdev::{listen, Event, EventType};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
-// Added BaseDirectory to handle the resolve method correctly
-use tauri::{Emitter, State, Window, Manager, path::BaseDirectory}; 
-use std::process::Child;
+use tauri::{path::BaseDirectory, Emitter, Manager, State, Window};
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct RecordedEvent {
-    event_type: String,
-    x: f64,
-    y: f64,
-    button: Option<String>,
-    key: Option<String>,
-    delay_ms: u128,
-}
-
-struct RecordingState {
-    is_recording: Arc<AtomicBool>,
-    events: Arc<Mutex<Vec<RecordedEvent>>>,
-}
-
+// Simplified AppState without recording fields
 struct AppState {
-    is_recording: Arc<AtomicBool>,
-    events: Arc<Mutex<Vec<RecordedEvent>>>,
-    running_process: Arc<Mutex<Option<Child>>>, 
+    running_process: Arc<Mutex<Option<Child>>>,
 }
 
 fn get_tests_dir() -> PathBuf {
     let mut path = std::env::current_dir().unwrap();
-    if path.ends_with("src-tauri") { path.pop(); }
+    if path.ends_with("src-tauri") {
+        path.pop();
+    }
     path.push("automation-engine");
     path.push("tests");
-    if !path.exists() { fs::create_dir_all(&path).unwrap(); }
+    if !path.exists() {
+        fs::create_dir_all(&path).unwrap();
+    }
     path
 }
+
+// --- CORE AUTOMATION COMMANDS ---
 
 #[tauri::command]
 async fn auto_save_temp(code: String) -> Result<String, String> {
@@ -60,13 +46,23 @@ async fn save_permanent_script(code: String, filename: String) -> Result<String,
         std::path::PathBuf::from(filename)
     } else {
         let mut p = get_tests_dir();
-        let name = if filename.ends_with(".ts") { filename } else { format!("{}.ts", filename) };
+        let name = if filename.ends_with(".ts") {
+            filename
+        } else {
+            format!("{}.ts", filename)
+        };
         p.push(name);
         p
     };
 
     fs::write(path, code).map_err(|e| e.to_string())?;
     Ok("Saved Successfully".into())
+}
+
+#[tauri::command]
+fn get_default_save_path() -> Result<String, String> {
+    let path = get_tests_dir(); // Uses your existing helper function
+    Ok(path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -77,92 +73,22 @@ async fn read_script_content(filename: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn start_global_recording(state: State<'_, RecordingState>) -> Result<String, String> {
-    state.is_recording.store(true, Ordering::SeqCst);
-    state.events.lock().unwrap().clear();
-    let is_recording_flag = Arc::clone(&state.is_recording);
-    let events_storage = Arc::clone(&state.events);
-
-    thread::spawn(move || {
-        let start_time = Instant::now();
-        let _ = listen(move |event: Event| {
-            if !is_recording_flag.load(Ordering::SeqCst) { return; }
-            let delay = start_time.elapsed().as_millis();
-            let mut captured = None;
-            match event.event_type {
-                EventType::MouseMove { x, y } => { captured = Some(RecordedEvent { event_type: "MouseMove".into(), x, y, button: None, key: None, delay_ms: delay }); }
-                EventType::ButtonPress(btn) => { captured = Some(RecordedEvent { event_type: "Click".into(), x: 0.0, y: 0.0, button: Some(format!("{:?}", btn)), key: None, delay_ms: delay }); }
-                EventType::KeyPress(k) => { captured = Some(RecordedEvent { event_type: "KeyPress".into(), x: 0.0, y: 0.0, button: None, key: Some(format!("{:?}", k)), delay_ms: delay }); }
-                _ => {}
-            }
-            if let Some(ev) = captured { events_storage.lock().unwrap().push(ev); }
-        });
-    });
-    Ok("Started".into())
-}
-
-#[tauri::command]
-async fn stop_global_recording(state: State<'_, RecordingState>) -> Result<Vec<RecordedEvent>, String> {
-    state.is_recording.store(false, Ordering::SeqCst);
-    Ok(state.events.lock().unwrap().clone())
-}
-
-#[tauri::command]
-async fn export_to_automation_script(filename: String, state: State<'_, RecordingState>) -> Result<String, String> {
-    let events = state.events.lock().unwrap();
-    
-    let mut script = String::from("import { chromium } from 'playwright';\n");
-    script.push_str("const logTask = (status, msg) => console.log(`TASK:${status}:${msg}`);\n\n");
-    script.push_str("(async () => {\n");
-    script.push_str("  try {\n"); // Added try block
-    script.push_str("    logTask('START', 'Launching Browser');\n");
-    script.push_str("    const browser = await chromium.launch({ headless: false });\n");
-    script.push_str("    const page = await browser.newPage();\n");
-    script.push_str("    logTask('DONE', 'Launching Browser');\n\n");
-
-    for ev in events.iter() {
-        if ev.event_type == "MouseMove" {
-            script.push_str(&format!("    await page.mouse.move({}, {});\n", ev.x, ev.y));
-        }
-        if ev.event_type == "Click" {
-            script.push_str(&format!(
-                "logTask('START', 'CLICK_{}', 'Performing Click');\n", 
-                ev.delay_ms
-            ));
-            script.push_str("await page.mouse.down(); await page.mouse.up();\n");
-            script.push_str(&format!(
-                "logTask('DONE', 'CLICK_{}', '');\n", 
-                ev.delay_ms
-            ));
-        }
-    }
-
-    script.push_str("    await browser.close();\n");
-    script.push_str("    logTask('DONE', 'Automation Finished');\n");
-    script.push_str("  } catch (e) {\n");
-    script.push_str("    logTask('FAIL', e.message);\n"); // Report error to UI
-    script.push_str("    process.exit(1);\n");
-    script.push_str("  }\n");
-    script.push_str("})();");
-
-    let mut path = get_tests_dir();
-    let name = if filename.ends_with(".ts") { filename } else { format!("{}.ts", filename) };
-    path.push(name);
-    fs::write(path, script).map_err(|e| e.to_string())?;
-    Ok("Exported".into())
-}
-
-#[tauri::command]
-async fn execute_script(window: Window, state: State<'_, AppState>, filename: String) -> Result<String, String> {
+async fn execute_script(
+    window: Window,
+    state: State<'_, AppState>,
+    filename: String,
+) -> Result<String, String> {
     let app = window.app_handle();
     let mut script_path = get_tests_dir();
     script_path.push(&filename);
-    
+
     let is_prod = !cfg!(debug_assertions);
-    
+
     let (mut command, final_engine_path, final_browser_path) = if !is_prod {
         let mut engine_path = std::env::current_dir().unwrap();
-        if engine_path.ends_with("src-tauri") { engine_path.pop(); }
+        if engine_path.ends_with("src-tauri") {
+            engine_path.pop();
+        }
         engine_path.push("automation-engine");
 
         let cmd = if cfg!(target_os = "windows") {
@@ -170,21 +96,31 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
             c.args(["/C", "npx", "tsx", script_path.to_str().unwrap()]);
             c
         } else {
-            let mut c = Command::new("npx");
-            c.args(["tsx", script_path.to_str().unwrap()]);
-            #[cfg(unix)] { c.process_group(0); }
-            c
+            let mut cmd = Command::new("npx");
+            cmd.args(["tsx", script_path.to_str().unwrap()]);
+            #[cfg(unix)]
+            {
+                cmd.process_group(0);
+            }
+            cmd
         };
         (cmd, engine_path, None)
     } else {
-        // PRODUCTION: Use bundled Node sidecar and internal paths
-        let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource).unwrap();
+        let sidecar_node = app
+            .path()
+            .resolve("bin/node", BaseDirectory::Resource)
+            .unwrap();
         let (prod_engine, prod_browser) = runtime::get_bundle_paths(app);
-        
+
         let mut c = Command::new(sidecar_node);
-        // Execute the bundled TSX cli directly via Node
-        c.args(["node_modules/tsx/dist/cli.mjs", script_path.to_str().unwrap()]);
-        #[cfg(unix)] { c.process_group(0); }
+        c.args([
+            "node_modules/tsx/dist/cli.mjs",
+            script_path.to_str().unwrap(),
+        ]);
+        #[cfg(unix)]
+        {
+            c.process_group(0);
+        }
         (c, prod_engine, Some(prod_browser))
     };
 
@@ -193,7 +129,10 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         command.env("PLAYWRIGHT_BROWSERS_PATH", bp);
     }
 
-    let mut child = command.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .map_err(|e| format!("Spawn error: {}", e))?;
 
     let stdout = child.stdout.take().ok_or("Stdout capture failed")?;
@@ -207,54 +146,57 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     let win_out = window.clone();
     thread::spawn(move || {
         let r = BufReader::new(stdout);
-        for l in r.lines().flatten() { let _ = win_out.emit("automation-log", l); }
+        for l in r.lines().flatten() {
+            let _ = win_out.emit("automation-log", l);
+        }
     });
 
     let win_err = window.clone();
     thread::spawn(move || {
         let r = BufReader::new(stderr);
-        for l in r.lines().flatten() { let _ = win_err.emit("automation-log", format!("TASK:FAIL:{}", l)); }
+        for l in r.lines().flatten() {
+            let _ = win_err.emit("automation-log", format!("TASK:FAIL:{}", l));
+        }
     });
 
-    // Monitor for finish
     let running_clone = Arc::clone(&state.running_process);
     let win_fin = window.clone();
-    thread::spawn(move || {
-        loop {
-            thread::sleep(std::time::Duration::from_millis(500));
-            let mut lock = running_clone.lock().unwrap();
-            if let Some(child) = lock.as_mut() {
-                if let Ok(Some(status)) = child.try_wait() {
-                    let _ = win_fin.emit("automation-finished", status.success());
-                    *lock = None;
-                    break;
-                }
-            } else { break; }
+    thread::spawn(move || loop {
+        thread::sleep(std::time::Duration::from_millis(500));
+        let mut lock = running_clone.lock().unwrap();
+        if let Some(child) = lock.as_mut() {
+            if let Ok(Some(status)) = child.try_wait() {
+                let _ = win_fin.emit("automation-finished", status.success());
+                *lock = None;
+                break;
+            }
+        } else {
+            break;
         }
     });
 
     Ok("Started".into())
 }
 
-
 #[tauri::command]
 async fn stop_script(state: State<'_, AppState>) -> Result<String, String> {
     let mut lock = state.running_process.lock().unwrap();
-    let child_handle = lock.take(); 
+    let child_handle = lock.take();
 
     if let Some(mut child) = child_handle {
         let pid = child.id();
-        
+
         #[cfg(target_os = "windows")]
         {
-            let _ = Command::new("taskkill").args(["/F", "/T", "/PID", &pid.to_string()]).output();
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
         }
 
         #[cfg(not(target_os = "windows"))]
         {
-            let pgid = pid; 
+            let pgid = pid;
             unsafe {
-                // Terminate the entire process group
                 libc::kill(-(pgid as libc::pid_t), libc::SIGKILL);
             }
             let _ = child.kill();
@@ -272,7 +214,9 @@ async fn list_saved_scripts() -> Result<Vec<String>, String> {
     let mut files = Vec::new();
     for entry in fs::read_dir(path).map_err(|e| e.to_string())?.flatten() {
         let name = entry.file_name().to_string_lossy().into_owned();
-        if name.ends_with(".ts") && name != "temp_task.ts" { files.push(name); }
+        if name.ends_with(".ts") && name != "temp_task.ts" {
+            files.push(name);
+        }
     }
     Ok(files)
 }
@@ -284,31 +228,40 @@ async fn delete_script(filename: String) -> Result<String, String> {
     if path.exists() {
         fs::remove_file(path).map_err(|e| e.to_string())?;
         Ok("Deleted".into())
-    } else { Err("File not found".into()) }
+    } else {
+        Err("File not found".into())
+    }
+}
+
+#[tauri::command]
+async fn rename_script(old_name: String, new_name: String) -> Result<String, String> {
+    let mut old_path = get_tests_dir();
+    old_path.push(&old_name);
+    let mut new_path = get_tests_dir();
+    new_path.push(&new_name);
+
+    std::fs::rename(old_path, new_path).map_err(|e| e.to_string())?;
+    Ok("Renamed".into())
 }
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(RecordingState { is_recording: Arc::new(AtomicBool::new(false)), events: Arc::new(Mutex::new(Vec::new())) })
-        .manage(AppState { 
-            is_recording: Arc::new(AtomicBool::new(false)), 
-            events: Arc::new(Mutex::new(Vec::new())),
-            running_process: Arc::new(Mutex::new(None))
+        .manage(AppState {
+            running_process: Arc::new(Mutex::new(None)),
         })
-       .invoke_handler(tauri::generate_handler![
+        .invoke_handler(tauri::generate_handler![
             auto_save_temp,
             save_permanent_script,
             read_script_content,
-            start_global_recording,
-            stop_global_recording,
-            export_to_automation_script,
             stop_script,
             execute_script,
             delete_script,
-            list_saved_scripts
-       ])
-       .run(tauri::generate_context!())
-       .expect("error while running tauri application");
+            list_saved_scripts,
+            rename_script,
+            get_default_save_path
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }

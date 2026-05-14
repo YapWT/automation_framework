@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { FileCode, Trash2, FolderSearch, Search, X, Edit3, Eye } from 'lucide-vue-next';
+// Added 'Type' icon for renaming (looks like text editing)
+import { FileCode, Trash2, FolderSearch, Search, X, Edit3, Eye, Type } from 'lucide-vue-next';
 
 const props = defineProps<{
   savedScripts: string[],
   currentOpenedPath: string | null,
   isModified: boolean,
-  runningFilePath: string | null
+  runningFilePath: string | null,
+  selectedFileIndex: number | null 
 }>();
 
-const emit = defineEmits(['load', 'run', 'delete']);
+const emit = defineEmits(['load', 'run', 'delete', 'update-index', 'rename']); // Added rename emit
 
 const searchQuery = ref("");
 const filteredFiles = computed(() => {
@@ -17,6 +19,10 @@ const filteredFiles = computed(() => {
   const q = searchQuery.value.toLowerCase();
   return props.savedScripts.filter(file => file.toLowerCase().includes(q));
 });
+
+function handleCardClick(index: number) {
+  emit('update-index', index);
+}
 </script>
 
 <template>
@@ -25,7 +31,9 @@ const filteredFiles = computed(() => {
       <div class="search-wrapper">
         <Search :size="16" class="search-icon" />
         <input v-model="searchQuery" placeholder="Search saved scripts..." class="search-input" />
-        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search"><X :size="14" /></button>
+        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
+          <X :size="14" />
+        </button>
       </div>
     </div>
 
@@ -35,43 +43,33 @@ const filteredFiles = computed(() => {
     </div>
 
     <div v-else class="saved-grid">
-      <div v-for="file in filteredFiles" :key="file" 
-           class="saved-card" 
-           :class="{ 
-             'is-active': file === currentOpenedPath,
-             'is-running': file === runningFilePath 
-           }">
+      <div v-for="(file, index) in filteredFiles" :key="file" class="saved-card" :class="{
+        'is-active': file === currentOpenedPath,
+        'kb-active': index === selectedFileIndex
+      }" @click="handleCardClick(index)">
         
         <div class="file-main-info">
+          <span class="file-index-label">{{ index + 1 }}</span>
           <FileCode :size="20" class="text-indigo-500 shrink-0" />
           <div class="flex flex-col overflow-hidden">
-            <span class="file-name" :title="file">{{ file }}</span>
-            
-            <!-- HINTS / BADGES -->
-            <!-- Inside the v-for loop of SavedScriptsList.vue -->
+            <span class="file-name">{{ file }}</span>
             <div class="hints-row">
-            <!-- 1. Show RUNNING if it's currently executing -->
-            <span v-if="file === runningFilePath" class="hint-badge running">
-              <span class="pulse-dot"></span> RUNNING
-            </span>
-      
-            <!-- 2. If it's the open file AND it has been changed, show MODIFIED -->
-            <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified">
-              <Edit3 :size="10" /> MODIFIED
-            </span>
-      
-            <!-- 3. If it's just the open file and NOT changed, show OPENING -->
-            <span v-else-if="file === currentOpenedPath" class="hint-badge active">
-              <Eye :size="10" /> OPENING
-            </span>
+              <span v-if="file === runningFilePath" class="hint-badge running"><span class="pulse-dot"></span> RUNNING</span>
+              <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified"><Edit3 :size="10" /> MODIFIED</span>
+              <span v-else-if="file === currentOpenedPath" class="hint-badge active"><Eye :size="10" /> OPENING</span>
+            </div>
           </div>
-        </div>
         </div>
 
         <div class="file-ops">
-          <button class="op-btn" @click="emit('load', file)">Load</button>
-          <button class="run-btn" @click="emit('run', file)">Run</button>
-          <button class="del-script-btn" @click="emit('delete', file)">
+          <!-- ADDED RENAME BUTTON -->
+          <button class="op-btn" @click.stop="emit('rename', file)" title="Rename Script (R)">
+            <Type :size="14" />
+          </button>
+          
+          <button class="op-btn" @click.stop="emit('load', file)">Load</button>
+          <button class="run-btn" @click.stop="emit('run', file)">Run</button>
+          <button class="del-script-btn" @click.stop="emit('delete', file)">
             <Trash2 :size="14" />
           </button>
         </div>
@@ -81,7 +79,26 @@ const filteredFiles = computed(() => {
 </template>
 
 <style scoped>
-.hints-row { display: flex; gap: 6px; margin-top: 4px; }
+.kb-active {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.file-index-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  width: 20px;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+/* Maintain existing styles */
+.hints-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
 
 .hint-badge {
   font-size: 9px;
@@ -93,23 +110,55 @@ const filteredFiles = computed(() => {
   gap: 4px;
 }
 
-.hint-badge.active { background: #eef2ff; color: #6366f1; }
-.hint-badge.modified { background: #fff7ed; color: #f97316; }
-.hint-badge.running { background: #ecfdf5; color: #10b981; }
+.hint-badge.active {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+.hint-badge.modified {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.hint-badge.running {
+  background: #ecfdf5;
+  color: #10b981;
+}
 
 .pulse-dot {
-  width: 6px; height: 6px; background: #10b981; border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.2); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.is-active { border-color: #6366f1 !important; background: #f8faff !important; }
-.is-running { border-color: #10b981 !important; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+.is-active {
+  border-color: #7c4746 !important;
+  background: #f8faff !important;
+}
+
+.is-running {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
 
 .saved-view {
   padding: 1.5rem 2rem;
@@ -120,7 +169,6 @@ const filteredFiles = computed(() => {
   flex-direction: column;
 }
 
-/* SEARCH STYLES */
 .saved-header {
   margin-bottom: 1.5rem;
   display: flex;
@@ -174,18 +222,6 @@ const filteredFiles = computed(() => {
   cursor: pointer;
 }
 
-.count-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  background: #e2e8f0;
-  padding: 4px 10px;
-  border-radius: 20px;
-  cursor: default;
-}
-
-/* GRID STYLES */
 .saved-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -243,7 +279,9 @@ const filteredFiles = computed(() => {
   padding: 6px 8px;
 }
 
-.op-btn:hover { color: #6366f1; }
+.op-btn:hover {
+  color: #6366f1;
+}
 
 .run-btn {
   background: #ecfdf5;
@@ -256,7 +294,9 @@ const filteredFiles = computed(() => {
   cursor: pointer;
 }
 
-.run-btn:hover { background: #d1fae5; }
+.run-btn:hover {
+  background: #d1fae5;
+}
 
 .del-script-btn {
   color: #94a3b8;
@@ -266,7 +306,11 @@ const filteredFiles = computed(() => {
   padding: 6px;
 }
 
-.del-script-btn:hover { color: #ef4444; background: #fef2f2; border-radius: 6px; }
+.del-script-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 6px;
+}
 
 .empty-saved {
   flex: 1;

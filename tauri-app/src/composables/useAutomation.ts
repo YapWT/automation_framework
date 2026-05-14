@@ -9,7 +9,6 @@ export function useAutomation() {
 
     const tasks = ref<Task[]>([]);
     const savedScripts = ref<string[]>([]);
-    const isRecording = ref(false);
     const isProcessing = ref(false);
     const showConsole = ref(false);
     const isManualEdit = ref(false);
@@ -21,7 +20,13 @@ export function useAutomation() {
     const copiedSourceId = ref<number | null>(null);
     const currentOpenedPath = ref<string | null>(null);
     const lastSavedCode = ref(""); // Track code exactly as it is on disk
+    const history = ref<string[]>([]);
+    const redoStack = ref<string[]>([]);
+    const isMoveMode = ref(false);
+    const designerSearchQuery = ref("");
     const runningFilePath = ref<string | null>(null); // Track which file is executing
+    const selectedFileIndex = ref<number | null>(null);
+    const isFullscreenConsole = ref(false);
 
     // Computed to check if the current editor content differs from the disk version
     const isModified = computed(() => {
@@ -39,7 +44,48 @@ export function useAutomation() {
         selectedStepIndex.value !== null ? workflow.value.steps[selectedStepIndex.value] : null
     );
 
-    function addStep(type: string) {
+    // --- NEW STATE FOR ADVANCED FEATURES ---
+    // Save a snapshot for Undo
+    function saveHistory() {
+        history.value.push(JSON.stringify(workflow.value.steps));
+        if (history.value.length > 50) history.value.shift(); // Limit to 50 steps
+        redoStack.value = []; // Clear redo on new action
+    }
+
+    function undo() {
+        if (history.value.length === 0) return;
+        redoStack.value.push(JSON.stringify(workflow.value.steps));
+        const previous = JSON.parse(history.value.pop()!);
+        workflow.value.steps = previous;
+    }
+
+    function redo() {
+        if (redoStack.value.length === 0) return;
+        history.value.push(JSON.stringify(workflow.value.steps));
+        const next = JSON.parse(redoStack.value.pop()!);
+        workflow.value.steps = next;
+    }
+
+    function moveStep(direction: 'up' | 'down') {
+        const idx = selectedStepIndex.value;
+        if (idx === null) return;
+        const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (newIdx < 0 || newIdx >= workflow.value.steps.length) return;
+
+        // Swap steps
+        const temp = workflow.value.steps[idx];
+        workflow.value.steps[idx] = workflow.value.steps[newIdx];
+        workflow.value.steps[newIdx] = temp;
+        selectedStepIndex.value = newIdx;
+
+        // Auto-scroll to keep moved item in view
+        setTimeout(() => {
+            document.querySelector('.step-card.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 10);
+        saveHistory();
+    }
+
+    function addStep(type: string, index?: number) {
         isManualEdit.value = false;
         const defaults: Record<string, any> = {
             navigate: { url: 'https://' },
@@ -53,12 +99,22 @@ export function useAutomation() {
             move: { from: '', to: '' }
         };
 
-        workflow.value.steps.push({
+        const newStep = {
             id: Date.now(),
             action: type,
             params: { ...defaults[type] }
-        });
-        selectedStepIndex.value = workflow.value.steps.length - 1;
+        };
+
+        if (typeof index === 'number') {
+            // Insert after the selection
+            workflow.value.steps.splice(index, 0, newStep);
+            selectedStepIndex.value = index;
+        } else {
+            // Fallback to bottom if no index provided
+            workflow.value.steps.push(newStep);
+            selectedStepIndex.value = workflow.value.steps.length - 1;
+        }
+        saveHistory()
     }
 
     async function selectExcel() {
@@ -73,6 +129,7 @@ export function useAutomation() {
             workflow.value.config.excelPath = selected as string;
             workflow.value.config.useExcel = true;
         }
+        saveHistory();
     }
 
     function resetDesigner() {
@@ -82,6 +139,7 @@ export function useAutomation() {
         workflow.value.config.useExcel = false;
         cancelCopy();
         currentOpenedPath.value = null;
+        saveHistory();
     }
 
     function handleIncomingLog(rawLog: string) {
@@ -150,6 +208,7 @@ export function useAutomation() {
             // CRITICAL: Auto-select the newly pasted card
             selectedStepIndex.value = targetIndex;
         }
+        saveHistory();
     }
 
     function cancelCopy() {
@@ -174,9 +233,18 @@ export function useAutomation() {
 
     async function handleSave() {
         try {
+            // 1. Ask Rust for the absolute path to the automation-engine/tests folder
+            const defaultFolder = await invoke('get_default_save_path') as string;
+
+            // 2. Combine the default folder with the current task name
+            // We use the opened path if it exists, otherwise the default project folder
+            const suggestion = currentOpenedPath.value ||
+                `${defaultFolder}/${workflow.value.name}.ts`;
+
+            // 3. Open the Native File Dialog
             const selectedPath = await save({
                 title: 'Save Automation Script',
-                defaultPath: currentOpenedPath.value || `${workflow.value.name}.ts`,
+                defaultPath: suggestion,
                 filters: [{ name: 'TypeScript', extensions: ['ts'] }]
             });
             if (!selectedPath) return;
@@ -212,23 +280,6 @@ export function useAutomation() {
                 if (t.status === 'running') t.status = 'error';
             });
         } catch (err) { console.error(err); }
-    }
-
-    async function toggleRecording() {
-        try {
-            if (!isRecording.value) {
-                await invoke('start_global_recording');
-                isRecording.value = true;
-                tasks.value = [];
-                handleIncomingLog("TASK:START:Global Recording Active");
-            } else {
-                const events: any[] = await invoke('stop_global_recording');
-                isRecording.value = false;
-                await invoke('export_to_automation_script', { filename: workflow.value.name });
-                await refreshSaved();
-                handleIncomingLog(`TASK:DONE:Saved ${events.length} events`);
-            }
-        } catch (err) { isRecording.value = false; }
     }
 
     async function handleRunManual(file: string) {
@@ -313,12 +364,38 @@ export function useAutomation() {
         }
     }
 
+    async function handleRename(oldFile: string) {
+        const newName = window.prompt("Enter new name for the script:", oldFile.replace('.ts', ''));
+        if (!newName) return;
+
+        const finalName = newName.endsWith('.ts') ? newName : `${newName}.ts`;
+        if (finalName === oldFile) return;
+
+        try {
+            await invoke('rename_script', { oldName: oldFile, newName: finalName });
+
+            // If the renamed file is the one currently open, update pointers
+            if (currentOpenedPath.value === oldFile) {
+                currentOpenedPath.value = finalName;
+                workflow.value.name = newName;
+            }
+
+            await refreshSaved();
+        } catch (err) {
+            handleIncomingLog(`TASK:FAIL:SYSTEM:Rename failed: ${err}`);
+        }
+    }
+
+    // Remember to return handleRename in the return block
+
     return {
         leftSidebarCollapsed, rightSidebarCollapsed, copiedSourceId, isModified, runningFilePath,
-        STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isRecording, isProcessing, showConsole,
+        STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isProcessing, showConsole,
         isManualEdit, manualCode, selectedStepIndex, clipboardStep, finalCode, activeStep, currentOpenedPath,
+        history, redoStack, designerSearchQuery, isMoveMode, selectedFileIndex, isFullscreenConsole,
+        saveHistory, undo, redo, moveStep, handleRename,
         handleCopy, handlePaste, handleIncomingLog, refreshSaved, handleRun, handleRunManual,
-        handleSave, stopAutomation, toggleRecording, handleDelete, loadScript, addStep, selectExcel,
+        handleSave, stopAutomation, handleDelete, loadScript, addStep, selectExcel,
         resetDesigner, cancelCopy, restoreTempTask
     };
 }
