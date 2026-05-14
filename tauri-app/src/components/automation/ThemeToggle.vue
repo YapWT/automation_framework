@@ -1,29 +1,43 @@
 <script setup lang="ts">
-import { Sun, Moon } from 'lucide-vue-next';
-import { useTheme } from '../../composables/useTheme';
+import { Sun, Moon } from "lucide-vue-next";
+import { useTheme } from "../../composables/useTheme";
 const { isDark, toggleTheme } = useTheme();
 </script>
 
 <template>
-  <button @click="toggleTheme" class="tool-icon-btn" :title="isDark ? 'Light Mode' : 'Dark Mode'">
-    <Sun v-if="isDark" size="18" />
-    <Moon v-else size="18" />
-  </button>
+    <button
+        @click="toggleTheme"
+        class="tool-icon-btn"
+        :title="isDark ? 'Light Mode' : 'Dark Mode'"
+    >
+        <Sun v-if="isDark" :size="18" />
+        <Moon v-else :size="18" />
+    </button>
 </template>
 
 <style scoped>
 /* This component uses the same class as your other icons to match the design */
-.tool-icon-btn { 
-  background: transparent;
-  border: 1px solid transparent; 
-  border-radius: 8px; 
-  width: 36px; height: 36px; 
-  display: flex; align-items: center; justify-content: center; 
-  cursor: pointer; color: #64748b;
-  transition: all 0.2s ease;
+.tool-icon-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s ease;
 }
-.tool-icon-btn:hover { background: #f1f5f9; color: #6366f1; }
+.tool-icon-btn:hover {
+    background: #f1f5f9;
+    color: #6366f1;
+}
 
 /* Dark mode specific hover */
-:global(html.dark) .tool-icon-btn:hover { background: #334155; color: #818cf8; }
+:global(html.dark) .tool-icon-btn:hover {
+    background: #334155;
+    color: #818cf8;
+}
 </style>

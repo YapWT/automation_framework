@@ -25,10 +25,10 @@ function remove(index: number) {
   <div class="designer-container">
     <!-- Empty State -->
     <div v-if="workflow.steps.length === 0" class="empty-state">
-       <Settings2 size="48" class="mb-4 opacity-10" />
+       <Settings2 :size="48" class="mb-4 opacity-10" />
        <p>Choose an interaction on the left to start building.</p>
        <button v-if="clipboardStep" class="paste-fab mt-4" @click="emit('paste', 0)">
-         <Clipboard size="14"/> Paste first step
+         <Clipboard :size="14"/> Paste first step
        </button>
     </div>
     
@@ -36,7 +36,7 @@ function remove(index: number) {
       <!-- TOP PASTE ZONE -->
       <div v-if="clipboardStep && workflow.steps.length > 0" 
            class="inline-paste-btn" @click="emit('paste', 0)">
-        <Plus size="12" /> Insert Step Here
+        <Plus :size="12" /> Insert Step Here
       </div>
 
       <draggable 
@@ -56,7 +56,7 @@ function remove(index: number) {
               }" 
               @click="select(index)"
             >
-              <div class="handle"><GripVertical size="16"/></div>
+              <div class="handle"><GripVertical :size="16"/></div>
               <div class="step-badge">{{ index + 1 }}</div>
               
               <div class="step-info">
@@ -66,17 +66,17 @@ function remove(index: number) {
 
               <div class="step-tools">
                 <button class="step-tool-btn" @click.stop="emit('copy', element)" title="Copy Step">
-                  <Copy size="14"/>
+                  <Copy :size="14"/>
                 </button>
                 <button class="step-tool-btn del" @click.stop="remove(index)" title="Delete Step">
-                  <Trash2 size="14"/>
+                  <Trash2 :size="14"/>
                 </button>
               </div>
             </div>
 
             <!-- IN-BETWEEN PASTE ZONE -->
             <div v-if="clipboardStep" class="inline-paste-btn" @click="emit('paste', index + 1)">
-              <Plus size="12" /> Insert Step Here
+              <Plus :size="12" /> Insert Step Here
             </div>
           </div>
         </template>
@@ -86,10 +86,10 @@ function remove(index: number) {
     <!-- BOTTOM FLOATING CONTROLS -->
     <div v-if="clipboardStep" class="paste-controls">
       <button class="paste-fab" @click="emit('paste')">
-        <Clipboard size="14"/> Paste at Bottom
+        <Clipboard :size="14"/> Paste at Bottom
       </button>
       <button class="cancel-fab" @click="emit('cancel-copy')" title="Cancel Copy">
-        <X size="14"/>
+        <X :size="14"/>
       </button>
     </div>
   </div>

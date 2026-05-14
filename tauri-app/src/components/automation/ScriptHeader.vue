@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Circle, Square, Terminal, Zap, Save, Settings2, Sun, Moon } from 'lucide-vue-next';
+import { Circle, Square, Terminal, Zap, Save, Settings2 } from 'lucide-vue-next';
 import ThemeToggle from './ThemeToggle.vue'; 
 import '../../assets/dark-theme.css';
 
@@ -26,18 +26,18 @@ const emit = defineEmits([
     <div class="toolbar-right">
       <div class="button-group">
         <button @click="emit('save')" class="action-btn save-btn" title="Save">
-          <Save size="14"/> <span class="hide-md">Save</span>
+          <Save :size="14"/> <span class="hide-md">Save</span>
         </button>
         <button @click="emit('toggle-recording')" class="action-btn record-btn" :class="{ 'recording-active': isRecording }" title="Record">
-          <component :is="isRecording ? Square : Circle" size="14" :fill="isRecording ? 'white' : 'currentColor'"/>
+          <component :is="isRecording ? Square : Circle" :size="14" :fill="isRecording ? 'white' : 'currentColor'"/>
           <span class="hide-md">{{ isRecording ? 'Stop' : 'Record' }}</span>
         </button>
         <button @click="emit('run')" class="action-btn test-btn" title="Run">
-          <Zap size="14"/> <span class="hide-md">Run</span>
+          <Zap :size="14"/> <span class="hide-md">Run</span>
         </button>
         <div class="divider"></div>
-        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }" title="Console"><Terminal size="18"/></button>        
-        <button @click="emit('toggle-right-sidebar')" class="tool-icon-btn" :class="{ active: !rightSidebarCollapsed }" title="Properties"><Settings2 size="18"/></button>
+        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }" title="Console"><Terminal :size="18"/></button>        
+        <button @click="emit('toggle-right-sidebar')" class="tool-icon-btn" :class="{ active: !rightSidebarCollapsed }" title="Properties"><Settings2 :size="18"/></button>
         <ThemeToggle />
       </div>
     </div>

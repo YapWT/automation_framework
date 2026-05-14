@@ -27,21 +27,21 @@ const scroll = (direction: 'top' | 'bottom') => {
       <div class="console-header-left overflow-hidden">
         <span class="console-title shrink-0">LOGS</span>
         <div class="console-search">
-          <Search size="12" class="search-icon" />
+          <Search :size="12" class="search-icon" />
           <input v-model="searchQuery" placeholder="Filter..." class="search-input" />
-          <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn"><X size="10" /></button>
+          <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn"><X :size="10" /></button>
         </div>
       </div>
 
       <div class="console-header-right">
         <button v-if="isProcessing" @click="emit('stop')" class="terminate-btn" title="Terminate">
-          <Square size="12" fill="currentColor"/><span>Terminate</span>
+          <Square :size="12" fill="currentColor"/><span>Terminate</span>
         </button>
         <button @click="emit('toggle-fullscreen')" class="tool-btn" :title="isFullscreen ? 'Restore' : 'Fullscreen'">
-          <component :is="isFullscreen ? Minimize2 : Maximize2" size="14"/>
+          <component :is="isFullscreen ? Minimize2 : Maximize2" :size="14"/>
         </button>
-        <button @click="emit('clear')" class="tool-btn" title="Clear"><Eraser size="14"/></button>
-        <button @click="emit('close')" class="tool-btn" title="Collapse"><ChevronDown size="16"/></button>
+        <button @click="emit('clear')" class="tool-btn" title="Clear"><Eraser :size="14"/></button>
+        <button @click="emit('close')" class="tool-btn" title="Collapse"><ChevronDown :size="16"/></button>
       </div>
     </div>
 
@@ -61,8 +61,8 @@ const scroll = (direction: 'top' | 'bottom') => {
         </div>
       </div>
       <div class="floating-scroll-actions">
-        <button @click="scroll('top')" class="scroll-fab" title="To Top"><ChevronUp size="14"/></button>
-        <button @click="scroll('bottom')" class="scroll-fab rotate-180" title="To Bottom"><ChevronUp size="14"/></button>
+        <button @click="scroll('top')" class="scroll-fab" title="To Top"><ChevronUp :size="14"/></button>
+        <button @click="scroll('bottom')" class="scroll-fab rotate-180" title="To Bottom"><ChevronUp :size="14"/></button>
       </div>
     </div>
   </div>

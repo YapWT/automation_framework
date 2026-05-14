@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { FileCode, Trash2, FolderSearch, Search, X, Clock, Edit3, Eye } from 'lucide-vue-next';
+import { FileCode, Trash2, FolderSearch, Search, X, Edit3, Eye } from 'lucide-vue-next';
 
 const props = defineProps<{
   savedScripts: string[],
@@ -23,14 +23,14 @@ const filteredFiles = computed(() => {
   <section class="saved-view">
     <div class="saved-header">
       <div class="search-wrapper">
-        <Search size="16" class="search-icon" />
+        <Search :size="16" class="search-icon" />
         <input v-model="searchQuery" placeholder="Search saved scripts..." class="search-input" />
-        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search"><X size="14" /></button>
+        <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search"><X :size="14" /></button>
       </div>
     </div>
 
     <div v-if="filteredFiles.length === 0" class="empty-saved">
-      <FolderSearch size="48" class="opacity-10 mb-4" />
+      <FolderSearch :size="48" class="opacity-10 mb-4" />
       <p>No scripts match your search.</p>
     </div>
 
@@ -43,7 +43,7 @@ const filteredFiles = computed(() => {
            }">
         
         <div class="file-main-info">
-          <FileCode size="20" class="text-indigo-500 shrink-0" />
+          <FileCode :size="20" class="text-indigo-500 shrink-0" />
           <div class="flex flex-col overflow-hidden">
             <span class="file-name" :title="file">{{ file }}</span>
             
@@ -57,12 +57,12 @@ const filteredFiles = computed(() => {
       
             <!-- 2. If it's the open file AND it has been changed, show MODIFIED -->
             <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified">
-              <Edit3 size="10" /> MODIFIED
+              <Edit3 :size="10" /> MODIFIED
             </span>
       
             <!-- 3. If it's just the open file and NOT changed, show OPENING -->
             <span v-else-if="file === currentOpenedPath" class="hint-badge active">
-              <Eye size="10" /> OPENING
+              <Eye :size="10" /> OPENING
             </span>
           </div>
         </div>
@@ -72,7 +72,7 @@ const filteredFiles = computed(() => {
           <button class="op-btn" @click="emit('load', file)">Load</button>
           <button class="run-btn" @click="emit('run', file)">Run</button>
           <button class="del-script-btn" @click="emit('delete', file)">
-            <Trash2 size="14" />
+            <Trash2 :size="14" />
           </button>
         </div>
       </div>

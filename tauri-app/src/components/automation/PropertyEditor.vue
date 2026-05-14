@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MousePointer2, Info, FolderSearch, X, Settings2 } from 'lucide-vue-next';
+import { MousePointer2, FolderSearch, X } from 'lucide-vue-next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { STRATEGIES_BY_ACTION as strategiesByAction } from '../../types/automation';
 
@@ -33,7 +33,7 @@ async function browse(step: any, key: string, isFolder: boolean) {
             <span class="action-tag">{{ activeStep.action.toUpperCase() }}</span>
           </div>
           <button class="close-panel-btn" @click="emit('close')" title="Close Properties">
-            <X size="16" />
+            <X :size="16" />
           </button>
         </div>
 
@@ -82,34 +82,56 @@ async function browse(step: any, key: string, isFolder: boolean) {
         </div>
 
         <!-- Dynamic Parameters -->
-        <div v-for="(val, key) in activeStep.params" :key="key">
-          <div v-if="!['matchBy', 'exact', 'force', 'timeout', 'index'].includes(key)" class="input-group">
+        <div v-for="(_, key) in activeStep.params" :key="key">
+          
+          <!-- 2. Wrap 'key' in String() to fix Error 2339 (toUpperCase) and 2345 (Argument mismatch) -->
+          <div v-if="!['matchBy', 'exact', 'force', 'timeout', 'index'].includes(String(key))" class="input-group">
             <div class="label-row">
-              <label>{{ key.toUpperCase() }}</label>
-              <button v-if="['path', 'from', 'to'].includes(key)" class="browse-link" @click="browse(activeStep, key, activeStep.action === 'mkdir')">
-                <FolderSearch size="12" /> Browse
+              
+              <!-- Fix: String(key).toUpperCase() -->
+              <label>{{ String(key).toUpperCase() }}</label>
+              
+              <!-- Fix: String(key) in the includes check and the browse function -->
+              <button 
+                v-if="['path', 'from', 'to'].includes(String(key))" 
+                class="browse-link" 
+                @click="browse(activeStep, String(key), activeStep.action === 'mkdir')"
+              >
+                <FolderSearch :size="12" /> Browse
               </button>
             </div>
             
-            <select v-if="key === 'key'" v-model="activeStep.params[key]" class="styled-select">
-              <option value="Enter">Enter</option><option value="Tab">Tab</option><option value="Escape">Escape</option>
-              <option value="ArrowDown">Down</option><option value="ArrowUp">Up</option><option value="Backspace">Backspace</option>
+            <!-- Logic for inputs/selects... -->
+            <select v-if="String(key) === 'key'" v-model="activeStep.params[key]" class="styled-select">
+              <option value="Enter">Enter</option>
+              <option value="Tab">Tab</option>
+              <option value="Escape">Escape</option>
+              <option value="ArrowDown">Down</option>
+              <option value="ArrowUp">Up</option>
+              <option value="Backspace">Backspace</option>
             </select>
-            <textarea v-else v-model="activeStep.params[key]" rows="4" class="styled-textarea" placeholder="Enter value..."></textarea>
+
+            <textarea 
+              v-else 
+              v-model="activeStep.params[key]" 
+              rows="4" 
+              class="styled-textarea" 
+              placeholder="Enter value..."
+            ></textarea>
           </div>
         </div>
 
-        <div class="tip-box" v-pre><Info size="14" /><span>Use <b>{{ColumnName}}</b> for data.</span></div>
+        <div class="tip-box" v-pre><Info :size="14" /><span>Use <b>{{ColumnName}}</b> for data.</span></div>
       </div>
 
       <!-- Empty State -->
       <div v-else class="empty-props">
         <div class="flex flex-col items-center">
-            <MousePointer2 size="32" class="opacity-10 mb-2" />
+            <MousePointer2 :size="32" class="opacity-10 mb-2" />
             <p>Select a step to configure</p>
         </div>
         <button class="close-panel-btn absolute top-4 right-4" @click="emit('close')">
-            <X size="16" />
+            <X :size="16" />
         </button>
       </div>
     </div>

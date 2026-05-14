@@ -14,7 +14,7 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
     <div class="header-section">
       <span v-if="!collapsed" class="brand truncate">ACTIONS</span>
       <button class="toggle-btn" @click="emit('toggle')" :title="collapsed ? 'Expand' : 'Collapse'">
-        <component :is="collapsed ? ChevronRight : ChevronLeft" size="16" />
+        <component :is="collapsed ? ChevronRight : ChevronLeft" :size="16" />
       </button>
     </div>
 
@@ -23,22 +23,22 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
       <div class="category">
         <label v-if="!collapsed" class="truncate">Web Interactions</label>
         <div class="action-item" @click="emit('add-step', 'navigate')" title="Open URL">
-          <Globe :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Open URL</span>
+          <Globe ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Open URL</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'fill')" title="Input Text">
-          <Type :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Input Text</span>
+          <Type ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Input Text</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'click')" title="Click Element">
-          <MousePointer2 :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Click Element</span>
+          <MousePointer2 ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Click Element</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'wait_for')" title="Wait for Element">
-          <Clock :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Wait for Element</span>
+          <Clock ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Wait for Element</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'upload')" title="Upload File">
-           <Upload :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Upload File</span>
+           <Upload ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Upload File</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'download')" title="Download File">
-          <Download :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Download File</span>
+          <Download ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Download File</span>
         </div>
       </div>
 
@@ -48,13 +48,13 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
       <div class="category">
         <label v-if="!collapsed" class="truncate">System & Keys</label>
         <div class="action-item" @click="emit('add-step', 'keyboard_press')" title="Key Press">
-          <Keyboard :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Key Press</span>
+          <Keyboard ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Key Press</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'mkdir')" title="Create Folder">
-          <FolderPlus :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Create Folder</span>
+          <FolderPlus ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Create Folder</span>
         </div>
         <div class="action-item" @click="emit('add-step', 'move')" title="Move File">
-          <Move :size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Move File</span>
+          <Move ::size="collapsed ? 20 : 18"/> <span v-if="!collapsed" class="truncate">Move File</span>
         </div>
       </div>
 
@@ -65,19 +65,19 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
         <label v-if="!collapsed" class="truncate">Data Context</label>
         
         <button v-if="!workflow.config.useExcel" class="xl-btn-base xl-sidebar-btn" @click="emit('select-excel')" title="Link Excel">
-          <FileSpreadsheet :size="collapsed ? 20 : 18" /> <span v-if="!collapsed" class="ml-3 truncate">Link Excel</span>
+          <FileSpreadsheet ::size="collapsed ? 20 : 18" /> <span v-if="!collapsed" class="ml-3 truncate">Link Excel</span>
         </button>
         
         <div v-else class="xl-btn-base xl-sidebar-active" @click="emit('select-excel')">
           <div class="flex items-center flex-1 overflow-hidden">
-            <CheckCircle :size="collapsed ? 20 : 16" class="text-emerald-500 shrink-0" />
+            <CheckCircle ::size="collapsed ? 20 : 16" class="text-emerald-500 shrink-0" />
             <span v-if="!collapsed" class="truncate ml-3">{{ workflow.config.excelPath.split(/[\\/]/).pop() }}</span>
           </div>
-          <XCircle v-if="!collapsed" size="14" class="xl-clear ml-2 shrink-0" @click.stop="workflow.config.useExcel = false" />
+          <XCircle v-if="!collapsed" :size="14" class="xl-clear ml-2 shrink-0" @click.stop="workflow.config.useExcel = false" />
         </div>
 
         <button class="reset-designer-btn mt-2" @click="emit('reset-designer')" title="Reset Designer">
-          <RotateCcw :size="collapsed ? 20 : 16"/> <span v-if="!collapsed" class="ml-2 truncate">Reset All</span>
+          <RotateCcw ::size="collapsed ? 20 : 16"/> <span v-if="!collapsed" class="ml-2 truncate">Reset All</span>
         </button>
       </div>
     </div>

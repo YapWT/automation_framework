@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Codemirror } from 'vue-codemirror';
 import { javascript } from '@codemirror/lang-javascript'; // Use the standard JS/TS extension
-import { Search, ChevronUp, RotateCcw } from 'lucide-vue-next';
+import { ChevronUp, RotateCcw } from 'lucide-vue-next';
 
 // --- IDE EXTENSIONS ---
 import { EditorView, keymap, drawSelection, highlightActiveLine, dropCursor } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import { indentOnInput, bracketMatching, foldGutter, foldKeymap, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+import { indentOnInput, bracketMatching, foldKeymap, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
@@ -68,7 +67,7 @@ const ideExtensions = [
   
   // STABLE SYNTAX LINTER: This catches standard JS/TS syntax errors
   // e.g. "const a =" or "function(){" without closing
-  linter((view) => {
+  linter(() => {
     // This uses the built-in parser to detect errors
     return []; // The language extension handles the diagnostics automatically in most cases
   }),
@@ -95,7 +94,7 @@ function scrollToTop() {
     <div class="editor-tools">
       <div v-if="isManualEdit" class="manual-tag">
         <span>Manual Mode</span>
-        <button @click="emit('reset')" class="reset-mini"><RotateCcw size="10"/> Reset</button>
+        <button @click="emit('reset')" class="reset-mini"><RotateCcw :size="10"/> Reset</button>
       </div>
     </div>
 
@@ -106,9 +105,9 @@ function scrollToTop() {
         :extensions="ideExtensions"
         :style="{ height: '100%', width: '100%' }"
         :indent-with-tab="true"
-        :tab-size="2"
+        :tab-:size="2"
       />
-      <button class="scroll-top-fab" @click="scrollToTop"><ChevronUp size="18" /></button>
+      <button class="scroll-top-fab" @click="scrollToTop"><ChevronUp :size="18" /></button>
     </div>
   </section>
 </template>
