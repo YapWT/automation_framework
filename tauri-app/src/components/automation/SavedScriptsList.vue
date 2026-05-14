@@ -35,6 +35,10 @@ function handleCardClick(index: number) {
           <X :size="14" />
         </button>
       </div>
+      <div class="count-badge" v-if="savedScripts.length > 0">
+        <span class="count-number">{{ filteredFiles.length }}</span>
+        <span class="count-text">{{ filteredFiles.length === 1 ? 'SCRIPT' : 'SCRIPTS' }} FOUND</span>
+      </div>
     </div>
 
     <div v-if="filteredFiles.length === 0" class="empty-saved">
@@ -319,5 +323,29 @@ function handleCardClick(index: number) {
   align-items: center;
   justify-content: center;
   color: #94a3b8;
+}
+.count-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.count-number {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #6366f1; /* Indigo color to match theme */
+}
+
+.count-text {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
 }
 </style>

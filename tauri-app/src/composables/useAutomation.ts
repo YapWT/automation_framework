@@ -365,7 +365,7 @@ export function useAutomation() {
     }
 
     async function handleRename(oldFile: string) {
-        const newName = window.prompt("Enter new name for the script:", oldFile.replace('.ts', ''));
+        const newName = window.prompt(`Enter new name for the ${oldFile}:`, oldFile.replace('.ts', ''));
         if (!newName) return;
 
         const finalName = newName.endsWith('.ts') ? newName : `${newName}.ts`;

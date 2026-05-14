@@ -1,18 +1,18 @@
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch, type Ref } from 'vue';
 
-export function useSavedHotkeys(auth: any) {
+// Define the interface for what this function returns
+interface SavedHotkeyReturn {
+    selectedFileIndex: Ref<number | null>;
+}
+
+export function useSavedHotkeys(auth: any): SavedHotkeyReturn {
     const selectedFileIndex = ref<number | null>(null);
 
-    // Helper to find the index of the currently opened file
-    const syncIndexWithOpenedFile = () => {
-        if (!auth.currentOpenedPath.value) return;
-        const idx = auth.savedScripts.value.indexOf(auth.currentOpenedPath.value);
+    // Sync focus when the current file changes via mouse
+    watch(() => auth.currentOpenedPath.value, (newPath) => {
+        if (!newPath) return;
+        const idx = auth.savedScripts.value.indexOf(newPath);
         if (idx !== -1) selectedFileIndex.value = idx;
-    };
-
-    // Watch for file changes (Mouse loads, Auto-recovery, etc.) to sync the hint
-    watch(() => auth.currentOpenedPath.value, () => {
-        syncIndexWithOpenedFile();
     }, { immediate: true });
 
     const getGridColumns = () => {
@@ -24,20 +24,24 @@ export function useSavedHotkeys(auth: any) {
     };
 
     const handleSavedKeyDown = async (event: KeyboardEvent) => {
-        if (auth.activeTab.value !== 'saved') return;
+        // PRIORITY CHECK: 
+        // 1. Must be on Saved Tab
+        // 2. Must NOT be in Fullscreen console
+        // 3. Must NOT be typing
+        if (auth.activeTab.value !== 'saved' || auth.isFullscreenConsole.value) return;
 
         const isCtrl = event.ctrlKey || event.metaKey;
         const key = event.key.toLowerCase();
         const code = event.code;
         const files = auth.savedScripts.value;
-        const isTyping = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+        const isTyping = ['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName);
 
-        if (code === 'Escape') {
-            if (isTyping) { event.preventDefault(); (event.target as HTMLElement).blur(); }
+        if (!auth.showConsole.value && code === 'Escape') {
+            if (isTyping) (event.target as HTMLElement).blur();
             return;
         }
 
-        if (isCtrl && key === 'f') {
+        if (!auth.showConsole.value && isCtrl && key === 'f') {
             event.preventDefault();
             (document.querySelector('.saved-header .search-input') as HTMLElement)?.focus();
             return;
@@ -45,58 +49,43 @@ export function useSavedHotkeys(auth: any) {
 
         if (isTyping) return;
 
-        // ADDED: HOME / END / PAGE NAVIGATION
-        if (code === 'Home' || code === 'PageUp') {
-            event.preventDefault();
-            selectedFileIndex.value = 0;
-            scrollFileIntoView();
-        }
-        if (code === 'End' || code === 'PageDown') {
-            event.preventDefault();
-            selectedFileIndex.value = files.length - 1;
-            scrollFileIntoView();
-        }
-
-        // ADDED: R KEY TO RENAME
-        if (key === 'r' && selectedFileIndex.value !== null) {
-            event.preventDefault();
-            auth.handleRename(files[selectedFileIndex.value]);
-        }
-
-        // NAVIGATION
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(code)) {
+        // NAVIGATION (Only if console is NOT open, so arrows scroll logs instead)
+        if (!auth.showConsole.value && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(code)) {
             event.preventDefault();
             if (selectedFileIndex.value === null) {
                 selectedFileIndex.value = 0;
             } else {
                 const cols = getGridColumns();
                 let newIndex = selectedFileIndex.value;
+
                 if (code === 'ArrowRight') newIndex++;
                 else if (code === 'ArrowLeft') newIndex--;
                 else if (code === 'ArrowDown') newIndex += cols;
                 else if (code === 'ArrowUp') newIndex -= cols;
+                else if (code === 'Home' || code === 'PageUp') newIndex = 0;
+                else if (code === 'End' || code === 'PageDown') newIndex = files.length - 1;
 
-                newIndex = Math.max(0, Math.min(newIndex, files.length - 1));
-                selectedFileIndex.value = newIndex;
+                selectedFileIndex.value = Math.max(0, Math.min(newIndex, files.length - 1));
             }
-            scrollFileIntoView();
+            
+            setTimeout(() => {
+                const activeCard = document.querySelector('.saved-card.kb-active');
+                if (activeCard) activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }, 10);
         }
 
         // DELETE / BACKSPACE
-        if (key === 'delete' || key === 'backspace') {
-            if (selectedFileIndex.value !== null && files[selectedFileIndex.value]) {
-                event.preventDefault();
-                const idx = selectedFileIndex.value;
-                const fileToDelete = files[idx];
-                await auth.handleDelete(fileToDelete);
-
-                const remaining = auth.savedScripts.value;
-                if (key === 'delete') {
-                    selectedFileIndex.value = Math.min(idx, remaining.length - 1);
-                } else {
-                    selectedFileIndex.value = Math.max(0, idx - 1);
-                }
-                if (remaining.length === 0) selectedFileIndex.value = null;
+        if ((key === 'delete' || key === 'backspace') && selectedFileIndex.value !== null) {
+            event.preventDefault();
+            const idx = selectedFileIndex.value;
+            const fileToDelete = files[idx];
+            await auth.handleDelete(fileToDelete);
+            
+            const remaining = auth.savedScripts.value;
+            if (key === 'delete') {
+                selectedFileIndex.value = Math.min(idx, remaining.length - 1);
+            } else {
+                selectedFileIndex.value = Math.max(0, idx - 1);
             }
         }
 
@@ -107,23 +96,21 @@ export function useSavedHotkeys(auth: any) {
             if (input) {
                 let num = parseInt(input) - 1;
                 selectedFileIndex.value = Math.max(0, Math.min(num, files.length - 1));
-                scrollFileIntoView();
             }
         }
 
-        // ACTIONS
+        // RENAME (R)
+        if (key === 'r' && !isCtrl && selectedFileIndex.value !== null) {
+            event.preventDefault();
+            auth.handleRename(files[selectedFileIndex.value]);
+        }
+
+        // LOAD (Ctrl + L) / RUN (Enter)
         if (selectedFileIndex.value !== null) {
             const targetFile = files[selectedFileIndex.value];
             if (isCtrl && key === 'l') { event.preventDefault(); auth.loadScript(targetFile); }
             if (code === 'Enter') { event.preventDefault(); auth.handleRunManual(targetFile); }
         }
-    };
-
-    const scrollFileIntoView = () => {
-        setTimeout(() => {
-            const activeCard = document.querySelector('.saved-card.kb-active');
-            if (activeCard) activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }, 10);
     };
 
     onMounted(() => window.addEventListener('keydown', handleSavedKeyDown));

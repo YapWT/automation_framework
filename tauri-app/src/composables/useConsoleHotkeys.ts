@@ -18,6 +18,12 @@ export function useConsoleHotkeys(auth: any) {
             return;
         }
 
+        if (isCtrl && key === 'f') {
+            event.preventDefault();
+            const el = document.querySelector('.console-search .search-input') as HTMLElement;
+            if (el) el.focus();
+        }
+
         // 3. CTRL + ESCAPE: Terminate Task
         if (isCtrl && code === 'Escape') {
             event.preventDefault();
@@ -46,7 +52,7 @@ export function useConsoleHotkeys(auth: any) {
         }
 
         // 6. CTRL + DELETE: Clear Console
-        if (isCtrl && code === 'Delete') {
+        if (isCtrl && (code === 'Delete' || code === 'Backspace')) {
             event.preventDefault();
             auth.tasks.value = [];
         }

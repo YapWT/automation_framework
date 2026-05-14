@@ -483,3 +483,18 @@ html.dark .saved-card.is-active {
 html.dark .file-index-label {
     color: #52525b;
 }
+
+:global(html.dark) .count-badge {
+  background: #1e1e22 !important;
+  border-color: #27272a !important;
+}
+
+:global(html.dark) .count-number {
+  color: #818cf8 !important;
+}
+
+/* Maintain your existing styles below */
+.kb-active {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}

@@ -1,12 +1,17 @@
 import { onMounted, onUnmounted } from 'vue';
 
-export function useHotkeys(auth: any) {
+export function useStepsHotkeys(auth: any) {
+    if (auth.showConsole.value) return;
     const handleKeyDown = (event: KeyboardEvent) => {
         const isCtrl = event.ctrlKey || event.metaKey;
         const isShift = event.shiftKey;
         const isAlt = event.altKey;
         const key = event.key.toLowerCase();
         const code = event.code;
+
+        if (auth.isFullscreenConsole.value && key !== 'f' && code !== 'Escape') {
+            return; 
+        }
 
         const isTyping = ['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName) ||
             (event.target as HTMLElement).isContentEditable;
@@ -41,6 +46,14 @@ export function useHotkeys(auth: any) {
             if (key === '2') { event.preventDefault(); auth.activeTab.value = 'preview'; }
             if (key === '3') { event.preventDefault(); auth.activeTab.value = 'saved'; auth.refreshSaved(); }
         }
+
+        if (isCtrl && key === 's') { event.preventDefault(); auth.handleSave(); return; }
+        if (isCtrl && key === 'j') { event.preventDefault(); auth.showConsole.value = !auth.showConsole.value; return; }
+        if (code === 'Enter' && isCtrl) { event.preventDefault(); auth.handleRun(true); return; }
+        if (key === 'q' && isCtrl) { event.preventDefault(); auth.leftSidebarCollapsed.value = !auth.leftSidebarCollapsed.value; }
+        if (key === 'e' && isCtrl) { event.preventDefault(); auth.rightSidebarCollapsed.value = !auth.rightSidebarCollapsed.value; }
+
+        if (auth.showConsole.value) return;  
 
         // --- FIXED CTRL + SHIFT + 1/2/3 ---
         if (isCtrl && isShift) {
@@ -115,14 +128,9 @@ export function useHotkeys(auth: any) {
         if (isCtrl) {
             if (key === 'z') { event.preventDefault(); auth.undo(); }
             if (key === 'y') { event.preventDefault(); auth.redo(); }
-            if (key === 's') { event.preventDefault(); auth.handleSave(); }
             if (key === 'r') { event.preventDefault(); auth.resetDesigner(); }
-            if (key === 'j') { event.preventDefault(); auth.showConsole.value = !auth.showConsole.value; }
-            if (key === 'q') { event.preventDefault(); auth.leftSidebarCollapsed.value = !auth.leftSidebarCollapsed.value; }
-            if (key === 'e') { event.preventDefault(); auth.rightSidebarCollapsed.value = !auth.rightSidebarCollapsed.value; }
             if (key === 'm' && auth.selectedStepIndex.value !== null) { event.preventDefault(); auth.isMoveMode.value = !auth.isMoveMode.value; }
-            if (key === 'v' && auth.clipboardStep.value) { event.preventDefault(); auth.handlePaste(getTargetIdx()); scrollActiveIntoView(); }
-            if (code === 'Enter') { event.preventDefault(); auth.handleRun(true); }
+            if (key === 'v' && auth.clipboardStep.value) { event.preventDefault(); auth.handlePaste(getTargetIdx()); scrollActiveIntoView(); }  
         }
 
         if (key === 'delete' || key === 'backspace') {

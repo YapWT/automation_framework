@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Circle, Square, Terminal, Zap, Save, Settings2 } from 'lucide-vue-next';
+import { Terminal, Zap, Save, Settings2 } from 'lucide-vue-next';
 import ThemeToggle from './ThemeToggle.vue';
 import '../../assets/dark-theme.css';
 

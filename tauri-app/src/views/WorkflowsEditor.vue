@@ -12,7 +12,7 @@ import StepDesigner from '../components/automation/StepDesigner.vue';
 import PropertyEditor from '../components/automation/PropertyEditor.vue';
 import ScriptEditor from '../components/automation/ScriptEditor.vue';
 import SavedScriptsList from '../components/automation/SavedScriptsList.vue';
-import { useHotkeys } from '../composables/useHotkeys';
+import { useStepsHotkeys as useStepsHotkeys } from '../composables/useStepsHotkeys';
 import { useSavedHotkeys } from '../composables/useSavedHotkeys';
 import { useConsoleHotkeys } from '../composables/useConsoleHotkeys';
 
@@ -22,10 +22,10 @@ const {
   activeTab, workflow, showConsole, isProcessing, isFullscreenConsole,
   tasks, finalCode, isManualEdit, savedScripts, selectedStepIndex,
   activeStep, leftSidebarCollapsed, rightSidebarCollapsed, clipboardStep,
-  isModified, runningFilePath, copiedSourceId, isMoveMode
+  isModified, runningFilePath, copiedSourceId, isMoveMode, currentOpenedPath
 } = toRefs(auth);
 
-useHotkeys(auth);
+useStepsHotkeys(auth);
 const { selectedFileIndex } = useSavedHotkeys(auth);
 useConsoleHotkeys(auth);
 
@@ -54,14 +54,6 @@ watch(() => workflow.value.steps.length, (newCount, oldCount) => {
     scrollToActiveStep();
   }
 });
-
-// 2. Local Wrapper for Sidebar clicks
-const handleSidebarAdd = (type: string) => {
-  // Use .value for refs inside the script setup
-  const targetIdx = selectedStepIndex.value !== null ? selectedStepIndex.value + 1 : undefined;
-  auth.addStep(type, targetIdx);
-  // Watcher above will trigger the scroll
-};
 
 // --- RESIZING LOGIC ---
 const startResizing = (direction: 'left' | 'right' | 'vertical', event: MouseEvent) => {
@@ -163,8 +155,8 @@ watch(finalCode, async (newCode) => {
         <ScriptEditor v-else-if="activeTab === 'preview'" v-model="finalCode" :isManualEdit="isManualEdit"
           @reset="isManualEdit = false" />
         <SavedScriptsList v-else-if="activeTab === 'saved'" :savedScripts="savedScripts" @rename="auth.handleRename"
-          :currentOpenedPath="auth.currentOpenedPath.value" :isModified="auth.isModified.value"
-          :runningFilePath="auth.runningFilePath.value" :selectedFileIndex="selectedFileIndex" @load="auth.loadScript"
+          :currentOpenedPath="currentOpenedPath" :isModified="isModified"
+          :runningFilePath="runningFilePath" :selectedFileIndex="selectedFileIndex" @load="auth.loadScript"
           @run="auth.handleRunManual" @delete="auth.handleDelete" @update-index="(idx) => selectedFileIndex = idx" />
       </div>
 
@@ -181,12 +173,6 @@ watch(finalCode, async (newCode) => {
     <PropertyEditor v-if="!rightSidebarCollapsed" :activeStep="activeStep" :workflow="workflow"
       @close="rightSidebarCollapsed = true" @resize-start="startResizing('right', $event)" />
   </div>
-
-  <transition name="fade">
-    <div v-if="auth.activeChord" class="chord-indicator">
-      Command Started: Ctrl + {{ auth.activeChord }}... Press 1-5
-    </div>
-  </transition>
 </template>
 
 <style scoped>
