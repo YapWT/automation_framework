@@ -13,7 +13,7 @@ import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } 
 import { lintGutter, lintKeymap, linter } from '@codemirror/lint'; // Added linter
 import { tags as t } from '@lezer/highlight';
 
-const props = defineProps<{ modelValue: string, isManualEdit: boolean }>();
+defineProps<{ modelValue: string, isManualEdit: boolean }>();
 const emit = defineEmits(['update:modelValue', 'reset']);
 
 // --- THEME DEFINITION ---

@@ -3,7 +3,7 @@ import { MousePointer2, FolderSearch, X } from 'lucide-vue-next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { STRATEGIES_BY_ACTION as strategiesByAction } from '../../types/automation';
 
-const props = defineProps<{ 
+defineProps<{ 
   activeStep: any,
   workflow: any 
 }>();
