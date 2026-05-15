@@ -18,6 +18,7 @@ const shortcutGroups = [
             { key: 'Ctrl + G', desc: 'Go to Step / File' },
             { key: 'Home / PgUp', desc: 'Jump to Top' },
             { key: 'End / PgDn', desc: 'Jump to Bottom' },
+            { key: '▲ ▼ ◀ ▶', desc: 'Move Focus Between Items' },
         ]
     },
     {
