@@ -47,15 +47,15 @@ jobs:
           # 1. Install UI dependencies
           npm install
           
-          # 2. Run the optimization/bundle script
-          node ../build-scripts/bundle-engine.js
+          # 2. Run the optimization script using absolute path
+          # $GITHUB_WORKSPACE points to the root of your repository
+          node $GITHUB_WORKSPACE/build-scripts/bundle-engine.js
           
           # 3. Inject Node Binary with OS-SPECIFIC naming
           mkdir -p src-tauri/bin
           if [ "${{ matrix.platform }}" == "windows-latest" ]; then
             cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            # Build for both architectures
             cp $(which node) src-tauri/bin/node-aarch64-apple-darwin
             cp $(which node) src-tauri/bin/node-x86_64-apple-darwin
           else
