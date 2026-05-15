@@ -12,9 +12,8 @@ jobs:
       matrix:
         include:
           - platform: "macos-latest"
-            args: "--target aarch64-apple-darwin"
-          - platform: "macos-latest"
-            args: "--target x86_64-apple-darwin"
+            # Build for BOTH Intel and Apple Silicon in one single DMG
+            args: "--target universal-apple-darwin"
           - platform: "ubuntu-22.04"
             args: ""
           - platform: "windows-latest"
@@ -32,6 +31,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
+          # Install both targets for Mac so we can make the Universal binary
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
@@ -44,18 +44,14 @@ jobs:
         shell: bash
         working-directory: tauri-app 
         run: |
-          # 1. Install UI dependencies
           npm install
-          
-          # 2. Run the optimization script using absolute path
-          # $GITHUB_WORKSPACE points to the root of your repository
           node $GITHUB_WORKSPACE/build-scripts/bundle-engine.js
           
-          # 3. Inject Node Binary with OS-SPECIFIC naming
           mkdir -p src-tauri/bin
           if [ "${{ matrix.platform }}" == "windows-latest" ]; then
             cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            # Provide both architecture names so the universal build succeeds
             cp $(which node) src-tauri/bin/node-aarch64-apple-darwin
             cp $(which node) src-tauri/bin/node-x86_64-apple-darwin
           else
@@ -71,4 +67,5 @@ jobs:
           tagName: v__VERSION__
           releaseName: "Automation App v__VERSION__"
           releaseDraft: true
+          # Matrix args handles the --target universal-apple-darwin
           args: ${{ matrix.args }}

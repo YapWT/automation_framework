@@ -32,6 +32,10 @@
     ],
     "externalBin": [
       "bin/node"
-    ]
+    ],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.13"
+    }
   }
 }
