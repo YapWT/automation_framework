@@ -42,25 +42,20 @@ jobs:
 
       - name: Prepare Sidecars and Browsers
         shell: bash
-        # This tells the script to run inside the tauri-app folder
         working-directory: tauri-app 
         run: |
-          # 1. Install frontend dependencies
+          # 1. Install UI dependencies
           npm install
           
-          # 2. Install automation engine dependencies
-          cd automation-engine && npm install && cd ..
+          # 2. Run the optimization/bundle script
+          node ../build-scripts/bundle-engine.js
           
-          # 3. Download browsers locally
-          export PLAYWRIGHT_BROWSERS_PATH=./automation-engine/local-browsers
-          npx playwright install chromium
-          
-          # 4. Inject Sidecar Node binary
+          # 3. Inject Node Binary with OS-SPECIFIC naming
           mkdir -p src-tauri/bin
           if [ "${{ matrix.platform }}" == "windows-latest" ]; then
             cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            # We need to provide both since we are cross-compiling on Mac
+            # Build for both architectures
             cp $(which node) src-tauri/bin/node-aarch64-apple-darwin
             cp $(which node) src-tauri/bin/node-x86_64-apple-darwin
           else
@@ -72,7 +67,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # Tells Tauri where the tauri.conf.json is located
           projectPath: tauri-app 
           tagName: v__VERSION__
           releaseName: "Automation App v__VERSION__"

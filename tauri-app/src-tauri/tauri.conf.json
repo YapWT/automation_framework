@@ -33,7 +33,5 @@
     "externalBin": [
       "bin/node"
     ]
-  },
-  "productName": "AutomationPro",
-  "identifier": "com.yourname.automation"
+  }
 }

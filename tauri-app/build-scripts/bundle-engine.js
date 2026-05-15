@@ -1,41 +1,27 @@
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-
-// Recreate __dirname in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
 async function prepare() {
-    const engineDir = path.join(__dirname, '../automation-engine');
-    const tauriBinDir = path.join(__dirname, '../src-tauri/bin');
+    // Note: This script is run from the tauri-app folder in CI
+    const engineDir = path.join(process.cwd(), 'automation-engine');
     const browserDir = path.join(engineDir, 'local-browsers');
 
-    console.log('📦 Preparing Automation Engine for production...');
+    console.log('📦 Cleaning and Pruning Automation Engine...');
 
-    // 1. Install dependencies in the engine
-    execSync('npm install', {
-        cwd: engineDir,
-        stdio: 'inherit'
-    });
+    // 1. Install all dependencies including dev ones (to get Playwright/TSX)
+    execSync('npm install', { cwd: engineDir, stdio: 'inherit' });
 
-    // 2. Download browsers into the LOCAL engine folder
+    // 2. Download ONLY Chromium (saves ~400MB by skipping Firefox/Webkit)
     console.log('🌐 Downloading bundled Chromium...');
-
     process.env.PLAYWRIGHT_BROWSERS_PATH = browserDir;
+    execSync('npx playwright install chromium', { cwd: engineDir, stdio: 'inherit' });
 
-    execSync('npx playwright install chromium', {
-        cwd: engineDir,
-        stdio: 'inherit'
-    });
+    // 3. REMOVE devDependencies (tsx, types, etc) to shrink the package
+    console.log('🧹 Removing developer tools from bundle...');
+    execSync('npm prune --production', { cwd: engineDir, stdio: 'inherit' });
 
-    // 3. Ensure bin directory exists for Node sidecar
-    if (!fs.existsSync(tauriBinDir)) {
-        fs.mkdirSync(tauriBinDir, { recursive: true });
-    }
-
-    console.log('✅ Production assets prepared.');
+    console.log('✅ Optimization complete.');
 }
 
 prepare();
