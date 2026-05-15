@@ -5,8 +5,8 @@ export function useStepsHotkeys(auth: any) {
         const isCtrl = event.ctrlKey || event.metaKey;
         const isShift = event.shiftKey;
         const isAlt = event.altKey;
-        // const key = event.key.toLowerCase();
-        const key = event.key;
+        const key = event.key.toLowerCase();
+        // const key = event.key;
         const code = event.code;
 
         // Detect if user is typing in a real input (to avoid accidental triggers)

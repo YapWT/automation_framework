@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
-    X, Keyboard, MousePointer2, Monitor,
-    Terminal, Save, FolderOpen, Zap, Search
+    X, Keyboard, Monitor, Terminal, Save, FolderOpen, Zap, Search
 } from 'lucide-vue-next';
 
 defineProps<{}>();
@@ -12,8 +11,18 @@ const searchQuery = ref("");
 
 const shortcutGroups = [
     {
-        title: 'Web Interactions',
-        icon: MousePointer2,
+        title: 'System & Navigation',
+        icon: Monitor,
+        keys: [
+            { key: 'Alt + 1 / 2 / 3', desc: 'Switch Tabs' },
+            { key: 'Ctrl + G', desc: 'Go to Step / File' },
+            { key: 'Home / PgUp', desc: 'Jump to Top' },
+            { key: 'End / PgDn', desc: 'Jump to Bottom' },
+        ]
+    },
+    {
+        title: 'Designer Editor',
+        icon: Keyboard,
         keys: [
             { key: 'Ctrl + 1', desc: 'Navigate to URL' },
             { key: 'Ctrl + 2', desc: 'Fill Input' },
@@ -21,29 +30,15 @@ const shortcutGroups = [
             { key: 'Ctrl + 4', desc: 'Wait for Element' },
             { key: 'Ctrl + 5', desc: 'Upload File' },
             { key: 'Ctrl + 6', desc: 'Download File' },
-        ]
-    },
-    {
-        title: 'System & Navigation',
-        icon: Monitor,
-        keys: [
             { key: 'Ctrl + Shift + 1', desc: 'Key Press Action' },
             { key: 'Ctrl + Shift + 2', desc: 'Create Folder' },
             { key: 'Ctrl + Shift + 3', desc: 'Move File' },
-            { key: 'Alt + 1 / 2 / 3', desc: 'Switch Tabs' },
-            { key: 'Ctrl + G', desc: 'Go to Step / File' },
-        ]
-    },
-    {
-        title: 'Designer Editor',
-        icon: Keyboard,
-        keys: [
             { key: 'Enter', desc: 'Quick Edit Step' },
             { key: 'Ctrl + C / V', desc: 'Copy / Paste Step' },
             { key: 'Ctrl + M', desc: 'Toggle Move Mode' },
             { key: 'Ctrl + Z / Y', desc: 'Undo / Redo Action' },
             { key: 'Ctrl + R', desc: 'Reset Designer' },
-            { key: 'Del / Backspace', desc: 'Remove Step' },
+            { key: 'Delete / Backspace', desc: 'Remove Step' },
             { key: 'Esc', desc: 'Deselect / Cancel' },
         ]
     },
@@ -55,8 +50,6 @@ const shortcutGroups = [
             { key: 'Ctrl + L', desc: 'Load Selected File' },
             { key: 'Enter', desc: 'Run Selected File' },
             { key: 'R', desc: 'Rename Selected File' },
-            { key: 'Home / PgUp', desc: 'Jump to Top' },
-            { key: 'End / PgDn', desc: 'Jump to Bottom' },
             { key: 'Delete / Backspace', desc: 'Remove File' },
             { key: "Esc", desc: 'Deselect / Cancel' }
         ]
@@ -68,9 +61,11 @@ const shortcutGroups = [
             { key: 'Ctrl + S', desc: 'Save Script to Disk' },
             { key: 'Ctrl + Enter', desc: 'Run Current Task' },
             { key: 'Ctrl + J', desc: 'Open / Close Console' },
-            { key: 'Ctrl + Delete', desc: 'Clear Console Logs' },
+            { key: 'Ctrl + Delete / Backspace', desc: 'Clear Console Logs' },
             { key: 'Ctrl + Alt + F', desc: 'Console Fullscreen' },
+            { key: 'Ctrl + Esc', desc: 'Terminate Task' },
             { key: 'Ctrl + Q / E', desc: 'Toggle Sidebars' },
+            { key: 'Ctrl + F', desc: 'Find / Search Log' },
         ]
     }
 ];
@@ -400,7 +395,6 @@ kbd {
     margin-right: 10px;
 }
 
-
 .search-clear {
     background: #f1f5f9;
     border: none;
@@ -414,7 +408,6 @@ kbd {
     color: #64748b;
 }
 
-/* BODY */
 .guide-body {
     padding: 2rem;
     overflow-y: auto;

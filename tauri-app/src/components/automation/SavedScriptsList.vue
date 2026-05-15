@@ -8,7 +8,7 @@ const props = defineProps<{
   currentOpenedPath: string | null,
   isModified: boolean,
   runningFilePath: string | null,
-  selectedFileIndex: number | null 
+  selectedFileIndex: number | null
 }>();
 
 const emit = defineEmits(['load', 'run', 'delete', 'update-index', 'rename']); // Added rename emit
@@ -28,7 +28,7 @@ function handleCardClick(index: number) {
 <template>
   <section class="saved-view">
     <div class="saved-header">
-      <div class="search-wrapper">
+      <div class="search-wrapper" title="(Ctrl + F)">
         <Search :size="16" class="search-icon" />
         <input v-model="searchQuery" placeholder="Search saved scripts..." class="search-input" />
         <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
@@ -51,16 +51,21 @@ function handleCardClick(index: number) {
         'is-active': file === currentOpenedPath,
         'kb-active': index === selectedFileIndex
       }" @click="handleCardClick(index)">
-        
+
         <div class="file-main-info">
           <span class="file-index-label">{{ index + 1 }}</span>
           <FileCode :size="20" class="text-indigo-500 shrink-0" />
           <div class="flex flex-col overflow-hidden">
             <span class="file-name">{{ file }}</span>
             <div class="hints-row">
-              <span v-if="file === runningFilePath" class="hint-badge running"><span class="pulse-dot"></span> RUNNING</span>
-              <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified"><Edit3 :size="10" /> MODIFIED</span>
-              <span v-else-if="file === currentOpenedPath" class="hint-badge active"><Eye :size="10" /> OPENING</span>
+              <span v-if="file === runningFilePath" class="hint-badge running"><span class="pulse-dot"></span>
+                RUNNING</span>
+              <span v-else-if="file === currentOpenedPath && isModified" class="hint-badge modified">
+                <Edit3 :size="10" /> MODIFIED
+              </span>
+              <span v-else-if="file === currentOpenedPath" class="hint-badge active">
+                <Eye :size="10" /> OPENING
+              </span>
             </div>
           </div>
         </div>
@@ -70,10 +75,10 @@ function handleCardClick(index: number) {
           <button class="op-btn" @click.stop="emit('rename', file)" title="Rename Script (R)">
             <Type :size="14" />
           </button>
-          
-          <button class="op-btn" @click.stop="emit('load', file)">Load</button>
-          <button class="run-btn" @click.stop="emit('run', file)">Run</button>
-          <button class="del-script-btn" @click.stop="emit('delete', file)">
+
+          <button class="op-btn" @click.stop="emit('load', file)" title="(Ctrl + L)">Load</button>
+          <button class="run-btn" @click.stop="emit('run', file)" title="(Enter)">Run</button>
+          <button class="del-script-btn" @click.stop="emit('delete', file)" title="(Del / Backspace)">
             <Trash2 :size="14" />
           </button>
         </div>
@@ -324,6 +329,7 @@ function handleCardClick(index: number) {
   justify-content: center;
   color: #94a3b8;
 }
+
 .count-badge {
   display: flex;
   align-items: center;
@@ -339,7 +345,8 @@ function handleCardClick(index: number) {
 .count-number {
   font-size: 0.85rem;
   font-weight: 900;
-  color: #6366f1; /* Indigo color to match theme */
+  color: #6366f1;
+  /* Indigo color to match theme */
 }
 
 .count-text {

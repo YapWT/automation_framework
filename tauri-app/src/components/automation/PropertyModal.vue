@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { MousePointer2, Info, FolderSearch, X, Check } from 'lucide-vue-next';
+import { MousePointer2, Info, FolderSearch, X, Check, Keyboard } from 'lucide-vue-next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { STRATEGIES_BY_ACTION as strategiesByAction } from '../../types/automation';
 
@@ -44,7 +44,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-content" ref="modalRef">
       
-      <!-- HEADER (Matched to Sidebar Header) -->
+      <!-- HEADER -->
       <div class="prop-section-header modal-header-padding">
         <div class="flex items-center gap-2">
           <h3>Quick Edit</h3>
@@ -57,8 +57,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
 
       <div class="modal-scroll-area">
         <div class="prop-container">
-          
-          <!-- GLOBAL CONFIG (Matched to Sidebar) -->
+          <!-- GLOBAL CONFIG -->
           <div class="global-config-top">
             <div class="check-row no-margin">
               <input type="checkbox" v-model="workflow.config.headless" id="m-hd-chk" />
@@ -115,7 +114,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
         </div>
       </div>
 
-
+      <!-- FOOTER WITH KEYBOARD HINTS -->
+      <div class="modal-footer">
+        <div class="kb-hints">
+            <div class="kb-hint"><kbd>Tab</kbd> <span>Navigate</span></div>
+            <div class="kb-hint"><kbd>Space</kbd> <span>Toggle</span></div>
+            <div class="kb-hint"><kbd>Esc</kbd> <span>Close</span></div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -127,40 +133,44 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
   backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000;
 }
 .modal-content {
-  background: white; width: 100%; max-width: 480px; border-radius: 16px;
+  background: white; width: 100%; max-width: 520px; border-radius: 16px;
   display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;
 }
 .modal-header-padding { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #f1f5f9; }
 .modal-scroll-area { flex: 1; overflow-y: auto; padding: 1.5rem; max-height: 60vh; }
-.modal-footer { padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
+.modal-footer { 
+    padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #f1f5f9; 
+    display: flex; justify-content: space-between; align-items: center; 
+}
+
+/* KEYBOARD HINTS STYLE */
+.kb-hints { display: flex; gap: 12px; }
+.kb-hint { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+kbd {
+    background: #ffffff; border: 1px solid #e2e8f0; border-bottom: 2px solid #cbd5e1;
+    padding: 1px 4px; border-radius: 4px; color: #334155; font-family: monospace;
+}
 
 /* REPLICATED SIDEBAR STYLES */
 .prop-container { width: 100%; }
 .prop-section-header { display: flex; justify-content: space-between; align-items: center; }
 .prop-section-header h3 { font-size: 0.9rem; color: #1e293b; font-weight: 800; margin: 0; }
 .action-tag { background: #f1f5f9; color: #6366f1; font-size: 0.55rem; padding: 2px 8px; border-radius: 20px; font-weight: 800; text-transform: uppercase; }
-
 .global-config-top { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 1rem; }
 .separator-light { height: 1px; background: #f1f5f9; margin-bottom: 1.25rem; }
-
 .input-group { margin-bottom: 1.25rem; }
 .input-group label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px; }
-
 .styled-input, .styled-select, .styled-textarea { 
-  width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; background: white;
+  width: 95%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; background: white;
 }
 .styled-textarea { resize: vertical; min-height: 80px; }
-
 .check-row { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font-size: 0.8rem; color: #64748b; font-weight: 500; }
 .no-margin { margin-bottom: 0; }
 .mt-3 { margin-top: 0.75rem; }
-
 .tip-box { background: #f0f9ff; padding: 12px; border-radius: 10px; font-size: 0.7rem; color: #0369a1; display: flex; gap: 10px; margin-top: 1.5rem; border: 1px solid #bae6fd; }
 .label-row { display: flex; justify-content: space-between; align-items: center; }
 .browse-link { background: #f1f5f9; border: none; color: #6366f1; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-
 .close-panel-btn { background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; }
 .close-panel-btn:hover { background: #f1f5f9; color: #ef4444; }
 .footer-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; cursor: pointer; margin-left: 8px; }
-
 </style>

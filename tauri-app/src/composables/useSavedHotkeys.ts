@@ -29,6 +29,7 @@ export function useSavedHotkeys(auth: any): SavedHotkeyReturn {
         // 2. Must NOT be in Fullscreen console
         // 3. Must NOT be typing
         if (auth.activeTab.value !== 'saved' || auth.isFullscreenConsole.value) return;
+        if (auth.showConsole.value) return;
 
         const isCtrl = event.ctrlKey || event.metaKey;
         const key = event.key.toLowerCase();
@@ -67,7 +68,7 @@ export function useSavedHotkeys(auth: any): SavedHotkeyReturn {
 
                 selectedFileIndex.value = Math.max(0, Math.min(newIndex, files.length - 1));
             }
-            
+
             setTimeout(() => {
                 const activeCard = document.querySelector('.saved-card.kb-active');
                 if (activeCard) activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -80,7 +81,7 @@ export function useSavedHotkeys(auth: any): SavedHotkeyReturn {
             const idx = selectedFileIndex.value;
             const fileToDelete = files[idx];
             await auth.handleDelete(fileToDelete);
-            
+
             const remaining = auth.savedScripts.value;
             if (key === 'delete') {
                 selectedFileIndex.value = Math.min(idx, remaining.length - 1);

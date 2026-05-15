@@ -26,7 +26,7 @@ const scroll = (direction: 'top' | 'bottom') => {
     <div class="console-header">
       <div class="console-header-left overflow-hidden">
         <span class="console-title shrink-0">LOGS</span>
-        <div class="console-search">
+        <div class="console-search" title="(Ctrl + F)">
           <Search :size="12" class="search-icon" />
           <input v-model="searchQuery" placeholder="Filter..." class="search-input" />
           <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">
@@ -36,16 +36,16 @@ const scroll = (direction: 'top' | 'bottom') => {
       </div>
 
       <div class="console-header-right">
-        <button v-if="isProcessing" @click="emit('stop')" class="terminate-btn" title="Terminate">
+        <button v-if="isProcessing" @click="emit('stop')" class="terminate-btn" title="Terminate (Ctrl + Escape)">
           <Square :size="12" fill="currentColor" /><span>Terminate</span>
         </button>
-        <button @click="emit('toggle-fullscreen')" class="tool-btn">
+        <button @click="emit('toggle-fullscreen')" class="tool-btn" title="(Ctrl + Alt + F)">
           <component :is="isFullscreen ? Minimize2 : Maximize2" :size="14" />
         </button>
-        <button @click="emit('clear')" class="tool-btn" title="Clear">
+        <button @click="emit('clear')" class="tool-btn" title="Clear (Ctrl + Backspace / Del)">
           <Eraser :size="14" />
         </button>
-        <button @click="emit('close')" class="tool-btn" title="Collapse">
+        <button @click="emit('close')" class="tool-btn" title="Collapse (Ctrl + J)">
           <ChevronDown :size="16" />
         </button>
       </div>
@@ -69,10 +69,10 @@ const scroll = (direction: 'top' | 'bottom') => {
         </div>
       </div>
       <div class="floating-scroll-actions">
-        <button @click="scroll('top')" class="scroll-fab" title="To Top">
+        <button @click="scroll('top')" class="scroll-fab" title="To Top (Home / PageUp)">
           <ChevronUp :size="14" />
         </button>
-        <button @click="scroll('bottom')" class="scroll-fab rotate-180" title="To Bottom">
+        <button @click="scroll('bottom')" class="scroll-fab rotate-180" title="To Bottom (End / PageDown)">
           <ChevronUp :size="14" />
         </button>
       </div>

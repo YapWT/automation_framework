@@ -58,7 +58,7 @@ function remove(index: number) {
               'is-copied': clipboardStep && element.id === copiedSourceId,
               'is-moving': isMoveMode && selectedIndex === index
             }" @click="select(index)">
-              <div class="handle">
+              <div class="handle" title="Move Step (Ctrl + M)">
                 <GripVertical :size="16" />
               </div>
               <div class="step-badge">{{ index + 1 }}</div>
@@ -66,14 +66,14 @@ function remove(index: number) {
               <div class="step-info">
                 <span class="step-type">{{ element.action.toUpperCase() }}</span>
                 <span class="step-desc">{{ element.params.selector || element.params.url || element.params.key || '...'
-                  }}</span>
+                }}</span>
               </div>
 
               <div class="step-tools">
-                <button class="step-tool-btn" @click.stop="emit('copy', element)" title="Copy Step">
+                <button class="step-tool-btn" @click.stop="emit('copy', element)" title="Copy Step (Ctrl + C)">
                   <Copy :size="14" />
                 </button>
-                <button class="step-tool-btn del" @click.stop="remove(index)" title="Delete Step">
+                <button class="step-tool-btn del" @click.stop="remove(index)" title="Delete Step (Backspace / Del)">
                   <Trash2 :size="14" />
                 </button>
               </div>
@@ -93,7 +93,7 @@ function remove(index: number) {
       <button class="paste-fab" @click="emit('paste')">
         <Clipboard :size="14" /> Paste at Bottom
       </button>
-      <button class="cancel-fab" @click="emit('cancel-copy')" title="Cancel Copy">
+      <button class="cancel-fab" @click="emit('cancel-copy')" title="Cancel Copy (Esc)">
         <X :size="14" />
       </button>
     </div>

@@ -16,25 +16,26 @@ const emit = defineEmits([
   <header class="toolbar">
     <div class="toolbar-left">
       <div class="tab-switcher">
-        <button :class="{ active: activeTab === 'editor' }"
+        <button :class="{ active: activeTab === 'editor' }" title="(Ctrl + Alt + 1)"
           @click="emit('update:activeTab', 'editor')">Designer</button>
-        <button :class="{ active: activeTab === 'preview' }"
+        <button :class="{ active: activeTab === 'preview' }" title="(Ctrl + Alt + 2)"
           @click="emit('update:activeTab', 'preview')">Editor</button>
-        <button :class="{ active: activeTab === 'saved' }"
+        <button :class="{ active: activeTab === 'saved' }" title="(Ctrl + Alt + 3)"
           @click="emit('update:activeTab', 'saved'); emit('refresh-saved')">Saved</button>
       </div>
     </div>
 
     <div class="toolbar-right">
       <div class="button-group">
-        <button @click="emit('save')" class="action-btn save-btn" title="Save">
+        <button @click="emit('save')" class="action-btn save-btn" title="Save (Ctrl + C)">
           <Save :size="14" /> <span class="hide-md">Save</span>
         </button>
-        <button @click="emit('run')" class="action-btn test-btn" title="Run">
+        <button @click="emit('run')" class="action-btn test-btn" title="Run (Ctrl + Enter)">
           <Zap :size="14" /> <span class="hide-md">Run</span>
         </button>
         <div class="divider"></div>
-        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }" title="Console">
+        <button @click="emit('toggle-console')" class="tool-icon-btn" :class="{ active: showConsole }"
+          title="Console (Ctrl + J)">
           <Terminal :size="18" />
         </button>
         <button @click="emit('toggle-right-sidebar')" class="tool-icon-btn" :class="{ active: !rightSidebarCollapsed }"

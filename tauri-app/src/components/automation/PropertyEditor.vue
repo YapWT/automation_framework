@@ -197,8 +197,11 @@ async function browse(step: any, key: string, isFolder: boolean) {
 .input-group { margin-bottom: 1.25rem; }
 .input-group label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px; }
 
-.styled-input, .styled-select, .styled-textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; }
+.styled-input, .styled-select, .styled-textarea { width: 95%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; }
 
+.styled-textarea {
+  resize: vertical;
+}
 .check-row { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font-size: 0.8rem; color: #64748b; font-weight: 500; }
 .check-row.no-margin { margin-bottom: 0; }
 .mt-3 { margin-top: 0.75rem; }
