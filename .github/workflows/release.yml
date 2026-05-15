@@ -9,10 +9,11 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
+      # FIX: Run builds one by one to prevent the GitHub "Unicorn" (500) error
+      max-parallel: 1 
       matrix:
         include:
           - platform: "macos-latest"
-            # Build for BOTH Intel and Apple Silicon in one single DMG
             args: "--target universal-apple-darwin"
           - platform: "ubuntu-22.04"
             args: ""
@@ -31,7 +32,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Install both targets for Mac so we can make the Universal binary
+          # Install both Mac targets for the universal build
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
@@ -44,16 +45,36 @@ jobs:
         shell: bash
         working-directory: tauri-app 
         run: |
+          # 1. Install frontend dependencies
           npm install
+          
+          # 2. Run the optimization/bundle script
           node $GITHUB_WORKSPACE/build-scripts/bundle-engine.js
           
+          # 3. Create bin folder
           mkdir -p src-tauri/bin
+          
           if [ "${{ matrix.platform }}" == "windows-latest" ]; then
             cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            # Provide both architecture names so the universal build succeeds
-            cp $(which node) src-tauri/bin/node-aarch64-apple-darwin
-            cp $(which node) src-tauri/bin/node-x86_64-apple-darwin
+            # 4. CREATE UNIVERSAL MAC SIDECAR
+            # We download both versions of Node and merge them into one "Fat" binary
+            # so the app works on both Intel and M1/M2/M3 Macs.
+            NODE_VER="v20.12.2"
+            
+            curl -L https://nodejs.org/dist/$NODE_VER/node-$NODE_VER-darwin-x64.tar.gz -o node-x64.tar.gz
+            curl -L https://nodejs.org/dist/$NODE_VER/node-$NODE_VER-darwin-arm64.tar.gz -o node-arm64.tar.gz
+            
+            tar -xzf node-x64.tar.gz
+            tar -xzf node-arm64.tar.gz
+            
+            # Use 'lipo' to merge them
+            lipo -create \
+              node-$NODE_VER-darwin-x64/bin/node \
+              node-$NODE_VER-darwin-arm64/bin/node \
+              -output src-tauri/bin/node-universal-apple-darwin
+              
+            chmod +x src-tauri/bin/node-universal-apple-darwin
           else
             cp $(which node) src-tauri/bin/node-x86_64-unknown-linux-gnu
           fi
@@ -67,5 +88,4 @@ jobs:
           tagName: v__VERSION__
           releaseName: "Automation App v__VERSION__"
           releaseDraft: true
-          # Matrix args handles the --target universal-apple-darwin
           args: ${{ matrix.args }}
