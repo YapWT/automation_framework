@@ -16,6 +16,7 @@ import { useStepsHotkeys as useStepsHotkeys } from '../composables/useStepsHotke
 import { useSavedHotkeys } from '../composables/useSavedHotkeys';
 import { useConsoleHotkeys } from '../composables/useConsoleHotkeys';
 import PropertyModal from '../components/automation/PropertyModal.vue';
+import { useGuideHotkeys } from '../composables/useGuideHotkeys';
 import ShortcutGuide from '../components/automation/ShortcutGuide.vue';
 
 const auth = useAutomation();
@@ -31,6 +32,7 @@ const {
 useStepsHotkeys(auth);
 const { selectedFileIndex } = useSavedHotkeys(auth);
 useConsoleHotkeys(auth);
+useGuideHotkeys(auth);
 
 // --- STATE ---
 const leftWidth = ref(240);
