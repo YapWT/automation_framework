@@ -36,7 +36,7 @@ const { selectedFileIndex } = useSavedHotkeys(auth);
 useConsoleHotkeys(auth);
 useGuideHotkeys(auth);
 
-const { isMenuVisible, menuX, menuY, menuTarget, openMenu, closeMenu } = useContextMenu(auth);
+const { isMenuVisible, menuX, menuY, menuTarget, openMenu, closeMenu } = useContextMenu();
 
 // --- STATE ---
 const leftWidth = ref(240);

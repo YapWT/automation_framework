@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
-    X, Keyboard, Monitor, Terminal, Save, FolderOpen, Zap, Search
+    X, Keyboard, Monitor, Terminal, FolderOpen, Zap, Search
 } from 'lucide-vue-next';
 
 defineProps<{}>();

@@ -10,7 +10,7 @@ const props = defineProps<{
   isMoveMode: boolean
 }>();
 
-const emit = defineEmits(['update:selectedIndex', 'copy', 'paste', 'cancel-copy']);
+const emit = defineEmits(['update:selectedIndex', 'copy', 'paste', 'cancel-copy', 'step-contextmenu']);
 
 function select(index: number) {
   emit('update:selectedIndex', index);

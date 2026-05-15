@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { MousePointer2, Info, FolderSearch, X, Check, Keyboard } from 'lucide-vue-next';
+import { FolderSearch, X } from 'lucide-vue-next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { STRATEGIES_BY_ACTION as strategiesByAction } from '../../types/automation';
 
