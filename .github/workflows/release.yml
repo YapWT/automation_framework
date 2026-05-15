@@ -9,72 +9,48 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
-      # FIX: Run builds one by one to prevent the GitHub "Unicorn" (500) error
+      # CRITICAL: This stops the GitHub "Unicorn" error by building one OS at a time
       max-parallel: 1 
       matrix:
         include:
           - platform: "macos-latest"
-            args: "--target universal-apple-darwin"
+            target: "aarch64-apple-darwin" # Apple Silicon (Smallest size)
+          - platform: "macos-latest"
+            target: "x86_64-apple-darwin"  # Intel Macs (Smallest size)
           - platform: "ubuntu-22.04"
-            args: ""
+            target: ""
           - platform: "windows-latest"
-            args: ""
+            target: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
       - name: setup node
         uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
+        with: { node-version: 20 }
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Install both Mac targets for the universal build
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
       - name: Prepare Sidecars and Browsers
         shell: bash
         working-directory: tauri-app 
         run: |
-          # 1. Install frontend dependencies
           npm install
-          
-          # 2. Run the optimization/bundle script
+          # 1. This script prunes devDependencies (shrinks size significantly)
           node $GITHUB_WORKSPACE/build-scripts/bundle-engine.js
           
-          # 3. Create bin folder
           mkdir -p src-tauri/bin
-          
           if [ "${{ matrix.platform }}" == "windows-latest" ]; then
             cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            # 4. CREATE UNIVERSAL MAC SIDECAR
-            # We download both versions of Node and merge them into one "Fat" binary
-            # so the app works on both Intel and M1/M2/M3 Macs.
-            NODE_VER="v20.12.2"
-            
-            curl -L https://nodejs.org/dist/$NODE_VER/node-$NODE_VER-darwin-x64.tar.gz -o node-x64.tar.gz
-            curl -L https://nodejs.org/dist/$NODE_VER/node-$NODE_VER-darwin-arm64.tar.gz -o node-arm64.tar.gz
-            
-            tar -xzf node-x64.tar.gz
-            tar -xzf node-arm64.tar.gz
-            
-            # Use 'lipo' to merge them
-            lipo -create \
-              node-$NODE_VER-darwin-x64/bin/node \
-              node-$NODE_VER-darwin-arm64/bin/node \
-              -output src-tauri/bin/node-universal-apple-darwin
-              
-            chmod +x src-tauri/bin/node-universal-apple-darwin
+            # 2. Match the specific CPU target for this runner (stays small)
+            cp $(which node) src-tauri/bin/node-${{ matrix.target }}
           else
             cp $(which node) src-tauri/bin/node-x86_64-unknown-linux-gnu
           fi
@@ -88,4 +64,5 @@ jobs:
           tagName: v__VERSION__
           releaseName: "Automation App v__VERSION__"
           releaseDraft: true
-          args: ${{ matrix.args }}
+          # 3. Only build for the specific target architecture
+          args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
