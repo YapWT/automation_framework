@@ -18,6 +18,8 @@ import { useConsoleHotkeys } from '../composables/useConsoleHotkeys';
 import PropertyModal from '../components/automation/PropertyModal.vue';
 import { useGuideHotkeys } from '../composables/useGuideHotkeys';
 import ShortcutGuide from '../components/automation/ShortcutGuide.vue';
+import ContextMenu from '../components/automation/ContextMenu.vue';
+import { useContextMenu } from '../composables/useContextMenu';
 
 const auth = useAutomation();
 
@@ -33,6 +35,8 @@ useStepsHotkeys(auth);
 const { selectedFileIndex } = useSavedHotkeys(auth);
 useConsoleHotkeys(auth);
 useGuideHotkeys(auth);
+
+const { isMenuVisible, menuX, menuY, menuTarget, openMenu, closeMenu } = useContextMenu(auth);
 
 // --- STATE ---
 const leftWidth = ref(240);
@@ -152,10 +156,11 @@ watch(finalCode, async (newCode) => {
         @save="auth.handleSave" @refresh-saved="auth.refreshSaved" />
 
       <div class="workspace-area">
-        <section v-if="activeTab === 'editor'" class="canvas-content">
+        <section v-if="activeTab === 'editor'" class="canvas-content" @contextmenu.stop="openMenu($event)">
           <StepDesigner :workflow="workflow" v-model:selectedIndex="selectedStepIndex" :clipboardStep="clipboardStep"
             :copiedSourceId="copiedSourceId" :isMoveMode="isMoveMode" @copy="auth.handleCopy"
-            @paste="(idx) => { auth.handlePaste(idx); scrollToActiveStep(); }" @cancel-copy="auth.cancelCopy" />
+            @step-contextmenu="openMenu" @paste="(idx) => { auth.handlePaste(idx); scrollToActiveStep(); }"
+            @cancel-copy="auth.cancelCopy" />
         </section>
         <ScriptEditor v-else-if="activeTab === 'preview'" v-model="finalCode" :isManualEdit="isManualEdit"
           @reset="isManualEdit = false" />
@@ -185,6 +190,10 @@ watch(finalCode, async (newCode) => {
     <Teleport to="body">
       <PropertyModal v-if="showPropertyModal" :activeStep="activeStep" :workflow="workflow"
         @close="showPropertyModal = false" />
+    </Teleport>
+
+    <Teleport to="body">
+      <ContextMenu v-if="isMenuVisible" :x="menuX" :y="menuY" :target="menuTarget" :auth="auth" @close="closeMenu" />
     </Teleport>
 
   </div>

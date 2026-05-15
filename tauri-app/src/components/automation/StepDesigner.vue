@@ -57,7 +57,10 @@ function remove(index: number) {
               active: selectedIndex === index,
               'is-copied': clipboardStep && element.id === copiedSourceId,
               'is-moving': isMoveMode && selectedIndex === index
-            }" @click="select(index)">
+            }" @click="select(index)" @contextmenu.stop="(e) => {
+    select(index); // 1. Change selection to this card
+    $emit('step-contextmenu', e, element, index); // 2. Trigger menu
+  }">
               <div class="handle" title="Move Step (Ctrl + M)">
                 <GripVertical :size="16" />
               </div>

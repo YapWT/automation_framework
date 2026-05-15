@@ -484,12 +484,12 @@ html.dark .file-index-label {
     color: #52525b;
 }
 
-:global(html.dark) .count-badge {
+html.dark .count-badge {
     background: #1e1e22 !important;
     border-color: #27272a !important;
 }
 
-:global(html.dark) .count-number {
+html.dark .count-number {
     color: #818cf8 !important;
 }
 
@@ -718,4 +718,23 @@ html.dark .guide-body::-webkit-scrollbar-thumb {
     background: #27272a !important;
     border: 4px solid var(--d-bg-panel);
     border-radius: 10px;
+}
+
+/* DARK MODE */
+html.dark .context-menu {
+    background: #111113 !important;
+    border-color: #242427 !important;
+}
+
+html.dark .menu-item {
+    color: #94a3b8 !important;
+}
+
+html.dark .menu-item:hover {
+    background: #1e1e22 !important;
+    color: #818cf8 !important;
+}
+
+html.dark .menu-divider {
+    background: #242427 !important;
 }

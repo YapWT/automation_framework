@@ -39,7 +39,7 @@ const emit = defineEmits([
           <Terminal :size="18" />
         </button>
         <button @click="emit('toggle-right-sidebar')" class="tool-icon-btn" :class="{ active: !rightSidebarCollapsed }"
-          title="Properties">
+          title="Properties (Ctrl + P)">
           <Settings2 :size="18" />
         </button>
         <ThemeToggle />
