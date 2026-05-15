@@ -27,6 +27,8 @@ export function useAutomation() {
     const runningFilePath = ref<string | null>(null); // Track which file is executing
     const selectedFileIndex = ref<number | null>(null);
     const isFullscreenConsole = ref(false);
+    const showPropertyModal = ref(false);
+    const showShortcutGuide = ref(false);
 
     // Computed to check if the current editor content differs from the disk version
     const isModified = computed(() => {
@@ -389,8 +391,8 @@ export function useAutomation() {
     // Remember to return handleRename in the return block
 
     return {
-        leftSidebarCollapsed, rightSidebarCollapsed, copiedSourceId, isModified, runningFilePath,
-        STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isProcessing, showConsole,
+        leftSidebarCollapsed, rightSidebarCollapsed, copiedSourceId, isModified, runningFilePath, showPropertyModal,
+        STRATEGIES_BY_ACTION, activeTab, workflow, tasks, savedScripts, isProcessing, showConsole, showShortcutGuide,
         isManualEdit, manualCode, selectedStepIndex, clipboardStep, finalCode, activeStep, currentOpenedPath,
         history, redoStack, designerSearchQuery, isMoveMode, selectedFileIndex, isFullscreenConsole,
         saveHistory, undo, redo, moveStep, handleRename,

@@ -485,16 +485,237 @@ html.dark .file-index-label {
 }
 
 :global(html.dark) .count-badge {
-  background: #1e1e22 !important;
-  border-color: #27272a !important;
+    background: #1e1e22 !important;
+    border-color: #27272a !important;
 }
 
 :global(html.dark) .count-number {
-  color: #818cf8 !important;
+    color: #818cf8 !important;
 }
 
 /* Maintain your existing styles below */
 .kb-active {
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* --- Property Modal Dark Mode (Onyx & Zinc) --- */
+
+/* 1. Overlay & Content Container */
+html.dark .modal-overlay {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+html.dark .modal-content {
+    background-color: #111113 !important;
+    /* Panel Background */
+    border-color: #242427 !important;
+    /* Muted Border */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 2. Header & Footer */
+html.dark .modal-header-padding,
+html.dark .modal-footer {
+    background-color: #111113 !important;
+    border-color: #242427 !important;
+}
+
+html.dark .modal-title,
+html.dark .prop-section-header h3 {
+    color: #fafafa !important;
+    /* Pure Soft White */
+}
+
+/* 3. Global Config Box (Headless Toggle area) */
+html.dark .global-config-top {
+    background-color: #09090b !important;
+    /* Deepest Neutral */
+    border: 1px solid #242427 !important;
+}
+
+html.dark .modal-separator,
+html.dark .separator-light {
+    background-color: #242427 !important;
+}
+
+/* 4. Form Elements (The Textboxes, Dropdowns, Textareas) */
+html.dark .styled-input,
+html.dark .styled-select,
+html.dark .styled-textarea {
+    background-color: #09090b !important;
+    /* Deepest Black/Grey */
+    border: 1px solid #242427 !important;
+    color: #e2e2e5 !important;
+    /* Main Text */
+}
+
+/* Focus state for inputs */
+html.dark .styled-input:focus,
+html.dark .styled-select:focus,
+html.dark .styled-textarea:focus {
+    border-color: #6366f1 !important;
+    /* Indigo Focus */
+}
+
+/* 5. Custom Checkbox Style inside Modal */
+html.dark .modal-content input[type="checkbox"] {
+    accent-color: #6366f1;
+    filter: invert(0.9) hue-rotate(180deg) brightness(0.8);
+    cursor: pointer;
+}
+
+/* 6. Labels and Action Tags */
+html.dark .modal-content label {
+    color: #71717a !important;
+    /* Muted Zinc-500 */
+}
+
+html.dark .action-tag {
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #818cf8 !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+/* 7. Buttons & Links */
+html.dark .browse-link {
+    background: #1e1e22 !important;
+    color: #818cf8 !important;
+    border: 1px solid #242427 !important;
+}
+
+html.dark .close-panel-btn:hover {
+    background: #1e1e22 !important;
+    color: #f87171 !important;
+}
+
+/* 8. Tip Box & Metadata recovery hints */
+html.dark .tip-box {
+    background: #16161a !important;
+    border: 1px solid #6366f1 !important;
+    color: #a1a1aa !important;
+}
+
+html.dark .shortcut-hint {
+    color: #52525b !important;
+}
+
+/* 9. Scrollbar for the Modal Body */
+html.dark .modal-scroll-area::-webkit-scrollbar-thumb {
+    background: #27272a !important;
+    border: 3px solid #111113;
+    border-radius: 10px;
+}
+
+html.dark select,
+html.dark .styled-select,
+html.dark .modal-content select {
+    background-color: #09090b !important;
+    /* Deepest background */
+    color: #e2e8f0 !important;
+    /* Light text */
+    border: 1px solid #242427 !important;
+}
+
+/* --- Shortcut Guide Dark Mode (Onyx & Zinc) --- */
+
+/* 1. Backdrop Overlay */
+html.dark .guide-overlay {
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+/* 2. Main Container */
+html.dark .guide-content {
+    background-color: var(--d-bg-panel) !important;
+    /* #111113 */
+    border-color: var(--d-border) !important;
+    /* #242427 */
+    box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 3. Header, Search Section, and Footer backgrounds */
+html.dark .guide-header,
+html.dark .search-section,
+html.dark .guide-footer {
+    background-color: var(--d-bg-panel) !important;
+    border-color: var(--d-border) !important;
+}
+
+/* 4. Search Input UI */
+html.dark .search-input-wrapper {
+    background-color: var(--d-bg-root) !important;
+    /* #0a0a0b */
+    border-color: var(--d-border) !important;
+}
+
+html.dark .search-input-wrapper input {
+    color: var(--d-text-main) !important;
+    background: transparent !important;
+}
+
+html.dark .search-input-wrapper input::placeholder {
+    color: var(--d-text-muted) !important;
+}
+
+/* 5. Key Cards (The rows containing descriptions and keys) */
+html.dark .key-card {
+    background-color: #161619 !important;
+    /* Slightly lighter than panel for depth */
+    border-color: var(--d-border) !important;
+}
+
+html.dark .key-desc {
+    color: var(--d-text-main) !important;
+}
+
+/* 6. KBD Tags (The physical key look) */
+html.dark kbd {
+    background-color: var(--d-bg-root) !important;
+    border-color: #333338 !important;
+    border-bottom-color: #000000 !important;
+    /* Shadow depth */
+    color: var(--d-accent-text) !important;
+}
+
+html.dark .key-sep {
+    color: var(--d-text-dim) !important;
+}
+
+/* 7. Typography & Icons */
+html.dark .guide-title {
+    color: #fafafa !important;
+}
+
+html.dark .guide-subtitle,
+html.dark .footer-hint span {
+    color: var(--d-text-muted) !important;
+}
+
+html.dark .group-header {
+    color: var(--d-accent) !important;
+    /* Keep Indigo headers */
+}
+
+/* 8. Utility Buttons */
+html.dark .footer-close-btn {
+    background-color: var(--d-accent) !important;
+    color: white !important;
+}
+
+html.dark .footer-close-btn:hover {
+    background-color: #4f46e5 !important;
+}
+
+html.dark .search-clear {
+    background-color: #27272a !important;
+    color: #a1a1aa !important;
+}
+
+/* 9. Scrollbar for Guide Body */
+html.dark .guide-body::-webkit-scrollbar-thumb {
+    background: #27272a !important;
+    border: 4px solid var(--d-bg-panel);
+    border-radius: 10px;
 }

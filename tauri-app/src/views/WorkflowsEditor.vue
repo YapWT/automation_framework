@@ -15,6 +15,8 @@ import SavedScriptsList from '../components/automation/SavedScriptsList.vue';
 import { useStepsHotkeys as useStepsHotkeys } from '../composables/useStepsHotkeys';
 import { useSavedHotkeys } from '../composables/useSavedHotkeys';
 import { useConsoleHotkeys } from '../composables/useConsoleHotkeys';
+import PropertyModal from '../components/automation/PropertyModal.vue';
+import ShortcutGuide from '../components/automation/ShortcutGuide.vue';
 
 const auth = useAutomation();
 
@@ -22,7 +24,8 @@ const {
   activeTab, workflow, showConsole, isProcessing, isFullscreenConsole,
   tasks, finalCode, isManualEdit, savedScripts, selectedStepIndex,
   activeStep, leftSidebarCollapsed, rightSidebarCollapsed, clipboardStep,
-  isModified, runningFilePath, copiedSourceId, isMoveMode, currentOpenedPath
+  isModified, runningFilePath, copiedSourceId, isMoveMode, currentOpenedPath,
+  showPropertyModal, showShortcutGuide
 } = toRefs(auth);
 
 useStepsHotkeys(auth);
@@ -155,9 +158,9 @@ watch(finalCode, async (newCode) => {
         <ScriptEditor v-else-if="activeTab === 'preview'" v-model="finalCode" :isManualEdit="isManualEdit"
           @reset="isManualEdit = false" />
         <SavedScriptsList v-else-if="activeTab === 'saved'" :savedScripts="savedScripts" @rename="auth.handleRename"
-          :currentOpenedPath="currentOpenedPath" :isModified="isModified"
-          :runningFilePath="runningFilePath" :selectedFileIndex="selectedFileIndex" @load="auth.loadScript"
-          @run="auth.handleRunManual" @delete="auth.handleDelete" @update-index="(idx) => selectedFileIndex = idx" />
+          :currentOpenedPath="currentOpenedPath" :isModified="isModified" :runningFilePath="runningFilePath"
+          :selectedFileIndex="selectedFileIndex" @load="auth.loadScript" @run="auth.handleRunManual"
+          @delete="auth.handleDelete" @update-index="(idx) => selectedFileIndex = idx" />
       </div>
 
       <ConsoleDrawer v-if="showConsole" :style="{ height: isFullscreenConsole ? '100%' : consoleHeight + 'px' }"
@@ -172,6 +175,16 @@ watch(finalCode, async (newCode) => {
 
     <PropertyEditor v-if="!rightSidebarCollapsed" :activeStep="activeStep" :workflow="workflow"
       @close="rightSidebarCollapsed = true" @resize-start="startResizing('right', $event)" />
+
+    <Teleport to="body">
+      <ShortcutGuide v-if="showShortcutGuide" @close="showShortcutGuide = false" />
+    </Teleport>
+
+    <Teleport to="body">
+      <PropertyModal v-if="showPropertyModal" :activeStep="activeStep" :workflow="workflow"
+        @close="showPropertyModal = false" />
+    </Teleport>
+
   </div>
 </template>
 
@@ -253,5 +266,15 @@ watch(finalCode, async (newCode) => {
   padding: 2rem;
   overflow-y: auto;
   background: #f8fafc;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
