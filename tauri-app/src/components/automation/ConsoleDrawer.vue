@@ -272,6 +272,10 @@ const scroll = (direction: 'top' | 'bottom') => {
   border-radius: 3px;
 }
 
+.task-label {
+  color: white;
+}
+
 .floating-scroll-actions {
   position: absolute;
   right: 20px;

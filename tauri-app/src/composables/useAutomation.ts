@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { message, ask, open, save } from '@tauri-apps/plugin-dialog';
+import { join } from '@tauri-apps/api/path';
 import { workflow, Task, STRATEGIES_BY_ACTION } from '../types/automation';
 import { ScriptGenerator } from '../services/Generator';
 
@@ -46,29 +47,38 @@ export function useAutomation() {
         selectedStepIndex.value !== null ? workflow.value.steps[selectedStepIndex.value] : null
     );
 
-    // --- NEW STATE FOR ADVANCED FEATURES ---
-    // Save a snapshot for Undo
+    // Updated saveHistory to capture everything
     function saveHistory() {
-        history.value.push(JSON.stringify(workflow.value.steps));
-        if (history.value.length > 50) history.value.shift(); // Limit to 50 steps
-        redoStack.value = []; // Clear redo on new action
+        // Save a full snapshot of the workflow (Name, Config, and Steps)
+        history.value.push(JSON.stringify(workflow.value));
+        if (history.value.length > 50) history.value.shift();
+        redoStack.value = [];
     }
 
     function undo() {
         if (history.value.length === 0) return;
-        redoStack.value.push(JSON.stringify(workflow.value.steps));
+        redoStack.value.push(JSON.stringify(workflow.value));
+
         const previous = JSON.parse(history.value.pop()!);
-        workflow.value.steps = previous;
+        // Restore everything
+        workflow.value.steps = previous.steps;
+        workflow.value.name = previous.name;
+        workflow.value.config = previous.config;
     }
 
     function redo() {
         if (redoStack.value.length === 0) return;
-        history.value.push(JSON.stringify(workflow.value.steps));
+        history.value.push(JSON.stringify(workflow.value));
+
         const next = JSON.parse(redoStack.value.pop()!);
-        workflow.value.steps = next;
+        // Restore everything
+        workflow.value.steps = next.steps;
+        workflow.value.name = next.name;
+        workflow.value.config = next.config;
     }
 
     function moveStep(direction: 'up' | 'down') {
+        saveHistory();
         const idx = selectedStepIndex.value;
         if (idx === null) return;
         const newIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -84,10 +94,11 @@ export function useAutomation() {
         setTimeout(() => {
             document.querySelector('.step-card.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }, 10);
-        saveHistory();
     }
 
     function addStep(type: string, index?: number) {
+        saveHistory();
+
         isManualEdit.value = false;
         const defaults: Record<string, any> = {
             navigate: { url: 'https://' },
@@ -116,10 +127,11 @@ export function useAutomation() {
             workflow.value.steps.push(newStep);
             selectedStepIndex.value = workflow.value.steps.length - 1;
         }
-        saveHistory()
     }
 
     async function selectExcel() {
+        saveHistory();
+
         const selected = await open({
             multiple: false,
             filters: [{
@@ -131,17 +143,32 @@ export function useAutomation() {
             workflow.value.config.excelPath = selected as string;
             workflow.value.config.useExcel = true;
         }
-        saveHistory();
     }
 
     function resetDesigner() {
+        saveHistory();
+
+        // 1. Clear the visual steps
         workflow.value.steps = [];
         selectedStepIndex.value = null;
+
+        // 2. Reset the Task Name to default
+        workflow.value.name = "automation_task";
+
+        // 3. Clear Excel configuration
         workflow.value.config.excelPath = "";
         workflow.value.config.useExcel = false;
+
+        // 4. Clear internal file tracking (Crucial for handleSave)
+        currentOpenedPath.value = null; // Set to null, not ""
+        lastSavedCode.value = "";       // Reset snapshot so "Modified" disappears
+
+        // 5. Cleanup UI states
         cancelCopy();
-        currentOpenedPath.value = null;
-        saveHistory();
+        isManualEdit.value = false;
+        activeTab.value = 'editor';
+
+        // 6. Record this state in history for Undo/Redo
     }
 
     function handleIncomingLog(rawLog: string) {
@@ -184,7 +211,9 @@ export function useAutomation() {
                 status: 'success'
             });
         }
-    } async function refreshSaved() {
+    }
+
+    async function refreshSaved() {
         savedScripts.value = await invoke('list_saved_scripts');
     }
 
@@ -194,6 +223,8 @@ export function useAutomation() {
     }
 
     function handlePaste(index?: number) {
+        saveHistory();
+
         if (clipboardStep.value) {
             const newStep = JSON.parse(JSON.stringify(clipboardStep.value));
             newStep.id = Date.now();
@@ -210,7 +241,6 @@ export function useAutomation() {
             // CRITICAL: Auto-select the newly pasted card
             selectedStepIndex.value = targetIndex;
         }
-        saveHistory();
     }
 
     function cancelCopy() {
@@ -235,37 +265,40 @@ export function useAutomation() {
 
     async function handleSave() {
         try {
-            // 1. Ask Rust for the absolute path to the automation-engine/tests folder
+            // 2. Get the root path from Rust
             const defaultFolder = await invoke('get_default_save_path') as string;
 
-            // 2. Combine the default folder with the current task name
-            // We use the opened path if it exists, otherwise the default project folder
-            const suggestion = currentOpenedPath.value ||
-                `${defaultFolder}/${workflow.value.name}.ts`;
+            // 3. Use the 'join' helper to create an absolute path
+            // This is much safer than `${folder}/${name}`
+            const suggestion = currentOpenedPath.value ? await join(defaultFolder, currentOpenedPath.value) :
+                // const suggestion = currentOpenedPath.value ||
+                await join(defaultFolder, `${workflow.value.name}.ts`);
 
-            // 3. Open the Native File Dialog
+            // Debug: Check this in your browser console to see the actual string
+            console.log("Save Suggestion Path:", suggestion);
+
             const selectedPath = await save({
                 title: 'Save Automation Script',
                 defaultPath: suggestion,
                 filters: [{ name: 'TypeScript', extensions: ['ts'] }]
             });
+
             if (!selectedPath) return;
 
+            // ... rest of your saving logic ...
             await invoke('save_permanent_script', {
                 code: finalCode.value,
                 filename: selectedPath
             });
 
+            // Update state
             const filename = selectedPath.split(/[\\/]/).pop() || 'task.ts';
             workflow.value.name = filename.replace('.ts', '');
             currentOpenedPath.value = selectedPath;
-
-            // SYNC: Update last saved code to clear the "Modified" hint
             lastSavedCode.value = finalCode.value;
-            isModified.value;
 
             await refreshSaved();
-            await message("Script saved successfully", { title: "Success", kind: "info" });
+            await message("Script saved successfully", { title: "Success" });
         } catch (err) {
             handleIncomingLog(`TASK:FAIL:SYSTEM:Save failed: ${err}`);
         }
@@ -344,6 +377,7 @@ export function useAutomation() {
     }
 
     async function loadScript(file: string) {
+        saveHistory();
         const code = await invoke('read_script_content', { filename: file }) as string;
 
         currentOpenedPath.value = file;

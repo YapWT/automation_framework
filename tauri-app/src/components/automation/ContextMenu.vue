@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import {
-    Copy, Trash2, Plus, Zap, ArrowUp, ArrowDown
+    Copy, Trash2, Plus, Zap, ArrowUp, ArrowDown, Undo, Redo
 } from 'lucide-vue-next';
 
 const props = defineProps<{
-    x: number, y: number, target: { step: any, index: number | null }, auth: any
+    x: number,
+    y: number,
+    target: { step: any, index: number | null },
+    auth: any
 }>();
 const emit = defineEmits(['close']);
 
@@ -24,7 +27,6 @@ const duplicate = () => {
 
 const move = (dir: 'up' | 'down') => {
     props.auth.moveStep(dir);
-    // Menu stays open for multiple moves? Or close? Usually close is safer.
     emit('close');
 };
 
@@ -39,43 +41,53 @@ const remove = () => {
 
 <template>
     <div class="context-menu" :style="{ top: y + 'px', left: x + 'px' }">
-        <!-- STEP SPECIFIC ACTIONS -->
-        <template v-if="target.step">
-            <div class="menu-label">Step Actions</div>
-            <div class="menu-group">
-                <div class="menu-item" @click="duplicate">
-                    <Copy :size="14" /> Duplicate
+        <!-- This container is the secret to making it scrollable -->
+        <div class="scrollable-content">
+            <!-- STEP ACTIONS -->
+            <template v-if="target.step">
+                <div class="menu-label">Step Actions</div>
+                <div class="menu-group">
+                    <div class="menu-item" @click="duplicate">
+                        <Copy :size="14" /> Duplicate
+                    </div>
+                    <div class="menu-item" @click="move('up')">
+                        <ArrowUp :size="14" /> Move Up
+                    </div>
+                    <div class="menu-item" @click="move('down')">
+                        <ArrowDown :size="14" /> Move Down
+                    </div>
+                    <div class="menu-item del" @click="remove">
+                        <Trash2 :size="14" /> Delete
+                    </div>
                 </div>
-                <div class="menu-item" @click="move('up')">
-                    <ArrowUp :size="14" /> Move Up
-                </div>
-                <div class="menu-item" @click="move('down')">
-                    <ArrowDown :size="14" /> Move Down
-                </div>
-                <div class="menu-item del" @click="remove">
-                    <Trash2 :size="14" /> Delete
-                </div>
-            </div>
-            <div class="menu-divider"></div>
-        </template>
+                <div class="menu-divider"></div>
+            </template>
 
-        <!-- INSERTION ACTIONS -->
-        <div class="menu-label">{{ target.step ? 'Insert After' : 'Add Step' }}</div>
-        <div class="menu-group scrollable">
-            <div class="menu-item" @click="add('navigate')">
-                <Plus :size="14" /> Open URL
-            </div>
-            <div class="menu-item" @click="add('fill')">
-                <Plus :size="14" /> Input Text
-            </div>
-            <div class="menu-item" @click="add('click')">
-                <Plus :size="14" /> Click Element
-            </div>
-            <div class="menu-item" @click="add('wait_for')">
-                <Plus :size="14" /> Wait For Element
-            </div>
-            <div class="menu-item" @click="add('keyboard_press')">
-                <Zap :size="14" /> Key Press
+            <!-- INSERT ACTIONS -->
+            <div class="menu-label">{{ target.step ? 'Insert After' : 'Add Step' }}</div>
+            <div class="menu-group">
+                <div class="menu-item" @click="props.auth.undo()">
+                    <Undo :size="14" /> Undo
+                </div>
+                <div class="menu-item" @click="props.auth.redo()">
+                    <Redo :size="14" /> Redo
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-item" @click="add('navigate')">
+                    <Plus :size="14" /> Open URL
+                </div>
+                <div class="menu-item" @click="add('fill')">
+                    <Plus :size="14" /> Input Text
+                </div>
+                <div class="menu-item" @click="add('click')">
+                    <Plus :size="14" /> Click Element
+                </div>
+                <div class="menu-item" @click="add('wait_for')">
+                    <Plus :size="14" /> Wait For Element
+                </div>
+                <div class="menu-item" @click="add('keyboard_press')">
+                    <Zap :size="14" /> Key Press
+                </div>
             </div>
         </div>
     </div>
@@ -89,23 +101,40 @@ const remove = () => {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     width: 200px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    padding: 6px;
-    overflow: hidden;
+
+    /* CRITICAL: We set a max height and hide overflow on the outer shell */
+    max-height: 350px;
+    display: flex;
+    flex-direction: column;
+
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    padding: 4px;
     user-select: none;
-    /* Prevent text selection inside the menu */
     animation: menu-appear 0.1s ease-out;
+}
+
+.scrollable-content {
+    /* CRITICAL: This internal div handles the actual scrolling */
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px;
+}
+
+/* Make scrollbar thin and clean */
+.scrollable-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
 }
 
 .menu-group {
     display: flex;
     flex-direction: column;
     gap: 2px;
-}
-
-.menu-group.scrollable {
-    max-height: 200px;
-    overflow-y: auto;
 }
 
 .menu-item {
@@ -118,7 +147,7 @@ const remove = () => {
     color: #475569;
     cursor: pointer;
     border-radius: 8px;
-    transition: 0.2s;
+    transition: 0.1s;
 }
 
 .menu-item:hover {
@@ -142,7 +171,7 @@ const remove = () => {
 .menu-divider {
     height: 1px;
     background: #f1f5f9;
-    margin: 4px;
+    margin: 4px 8px;
 }
 
 @keyframes menu-appear {
@@ -155,5 +184,24 @@ const remove = () => {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+/* Dark Mode */
+:global(html.dark) .context-menu {
+    background: #111113 !important;
+    border-color: #242427 !important;
+}
+
+:global(html.dark) .menu-item {
+    color: #94a3b8 !important;
+}
+
+:global(html.dark) .menu-item:hover {
+    background: #1e1e22 !important;
+    color: #818cf8 !important;
+}
+
+:global(html.dark) .scrollable-content::-webkit-scrollbar-thumb {
+    background: #242427;
 }
 </style>
