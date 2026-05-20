@@ -3,7 +3,12 @@
   "private": true,
   "scripts": {
     "prepare-bins": "node prepare-sidecar.js",
-    "dev": "npm run prepare-bins && cd tauri-app && npm run tauri dev",
-    "build": "npm run prepare-bins && cd tauri-app && npm run tauri build"
+    "prepare-engine": "node prepare-engine.js",
+    "dev": "npm run prepare-bins && npm run prepare-engine && cd tauri-app && npm run tauri dev",
+    "build": "npm run prepare-bins && npm run prepare-engine && cd tauri-app && npm run tauri build"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "playwright": "^1.60.0"
   }
 }
