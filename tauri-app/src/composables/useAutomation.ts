@@ -20,26 +20,29 @@ export function useAutomation() {
     const rightSidebarCollapsed = ref(false);
     const copiedSourceId = ref<number | null>(null);
     const currentOpenedPath = ref<string | null>(null);
-    const lastSavedCode = ref(""); // Track code exactly as it is on disk
+    const lastSavedCode = ref("");
     const history = ref<string[]>([]);
     const redoStack = ref<string[]>([]);
     const isMoveMode = ref(false);
     const designerSearchQuery = ref("");
-    const runningFilePath = ref<string | null>(null); // Track which file is executing
-    const selectedFileIndex = ref<number | null>(null);
+    const runningFilePath = ref<string | null>(null); const selectedFileIndex = ref<number | null>(null);
     const isFullscreenConsole = ref(false);
     const showPropertyModal = ref(false);
     const showShortcutGuide = ref(false);
 
-    // Computed to check if the current editor content differs from the disk version
     const isModified = computed(() => {
         if (!currentOpenedPath.value) return false;
-        // Compare current generated/manual code with the baseline from the file
         return finalCode.value.trim() !== lastSavedCode.value.trim();
     });
 
     const finalCode = computed({
-        get: () => isManualEdit.value ? manualCode.value : ScriptGenerator.generate(workflow.value),
+        get: () => {
+            const payload = {
+                ...workflow.value,
+                openedPath: currentOpenedPath.value
+            };
+            return isManualEdit.value ? manualCode.value : ScriptGenerator.generate(payload);
+        },
         set: (val) => { manualCode.value = val; isManualEdit.value = true; }
     });
 
@@ -47,9 +50,7 @@ export function useAutomation() {
         selectedStepIndex.value !== null ? workflow.value.steps[selectedStepIndex.value] : null
     );
 
-    // Updated saveHistory to capture everything
     function saveHistory() {
-        // Save a full snapshot of the workflow (Name, Config, and Steps)
         history.value.push(JSON.stringify(workflow.value));
         if (history.value.length > 50) history.value.shift();
         redoStack.value = [];
@@ -60,7 +61,6 @@ export function useAutomation() {
         redoStack.value.push(JSON.stringify(workflow.value));
 
         const previous = JSON.parse(history.value.pop()!);
-        // Restore everything
         workflow.value.steps = previous.steps;
         workflow.value.name = previous.name;
         workflow.value.config = previous.config;
@@ -71,7 +71,6 @@ export function useAutomation() {
         history.value.push(JSON.stringify(workflow.value));
 
         const next = JSON.parse(redoStack.value.pop()!);
-        // Restore everything
         workflow.value.steps = next.steps;
         workflow.value.name = next.name;
         workflow.value.config = next.config;
@@ -84,13 +83,11 @@ export function useAutomation() {
         const newIdx = direction === 'up' ? idx - 1 : idx + 1;
         if (newIdx < 0 || newIdx >= workflow.value.steps.length) return;
 
-        // Swap steps
         const temp = workflow.value.steps[idx];
         workflow.value.steps[idx] = workflow.value.steps[newIdx];
         workflow.value.steps[newIdx] = temp;
         selectedStepIndex.value = newIdx;
 
-        // Auto-scroll to keep moved item in view
         setTimeout(() => {
             document.querySelector('.step-card.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }, 10);
@@ -119,11 +116,9 @@ export function useAutomation() {
         };
 
         if (typeof index === 'number') {
-            // Insert after the selection
             workflow.value.steps.splice(index, 0, newStep);
             selectedStepIndex.value = index;
         } else {
-            // Fallback to bottom if no index provided
             workflow.value.steps.push(newStep);
             selectedStepIndex.value = workflow.value.steps.length - 1;
         }
@@ -148,35 +143,24 @@ export function useAutomation() {
     function resetDesigner() {
         saveHistory();
 
-        // 1. Clear the visual steps
         workflow.value.steps = [];
         selectedStepIndex.value = null;
 
-        // 2. Reset the Task Name to default
         workflow.value.name = "automation_task";
 
-        // 3. Clear Excel configuration
         workflow.value.config.excelPath = "";
         workflow.value.config.useExcel = false;
 
-        // 4. Clear internal file tracking (Crucial for handleSave)
-        currentOpenedPath.value = null; // Set to null, not ""
-        lastSavedCode.value = "";       // Reset snapshot so "Modified" disappears
-
-        // 5. Cleanup UI states
+        currentOpenedPath.value = null; lastSavedCode.value = "";
         cancelCopy();
         isManualEdit.value = false;
         activeTab.value = 'editor';
 
-        // 6. Record this state in history for Undo/Redo
     }
 
     function handleIncomingLog(rawLog: string) {
         const log = rawLog.trim();
         if (!log) return;
-
-        // DEBUG: Add this to see if the log is even reaching this function
-        console.log("Processing log:", log);
 
         if (log.startsWith("TASK:")) {
             const parts = log.split(':');
@@ -204,7 +188,6 @@ export function useAutomation() {
                 }
             }
         } else {
-            // Fallback for system logs
             tasks.value.push({
                 id: `sys-${Date.now()}`,
                 label: log,
@@ -219,7 +202,7 @@ export function useAutomation() {
 
     function handleCopy(step: any) {
         clipboardStep.value = JSON.parse(JSON.stringify(step));
-        copiedSourceId.value = step.id; // Store the ID of the original card
+        copiedSourceId.value = step.id;
     }
 
     function handlePaste(index?: number) {
@@ -238,7 +221,6 @@ export function useAutomation() {
                 targetIndex = workflow.value.steps.length - 1;
             }
 
-            // CRITICAL: Auto-select the newly pasted card
             selectedStepIndex.value = targetIndex;
         }
     }
@@ -265,17 +247,10 @@ export function useAutomation() {
 
     async function handleSave() {
         try {
-            // 2. Get the root path from Rust
             const defaultFolder = await invoke('get_default_save_path') as string;
 
-            // 3. Use the 'join' helper to create an absolute path
-            // This is much safer than `${folder}/${name}`
             const suggestion = currentOpenedPath.value ? await join(defaultFolder, currentOpenedPath.value) :
-                // const suggestion = currentOpenedPath.value ||
                 await join(defaultFolder, `${workflow.value.name}.ts`);
-
-            // Debug: Check this in your browser console to see the actual string
-            console.log("Save Suggestion Path:", suggestion);
 
             const selectedPath = await save({
                 title: 'Save Automation Script',
@@ -285,13 +260,11 @@ export function useAutomation() {
 
             if (!selectedPath) return;
 
-            // ... rest of your saving logic ...
             await invoke('save_permanent_script', {
                 code: finalCode.value,
                 filename: selectedPath
             });
 
-            // Update state
             const filename = selectedPath.split(/[\\/]/).pop() || 'task.ts';
             workflow.value.name = filename.replace('.ts', '');
             currentOpenedPath.value = selectedPath;
@@ -308,7 +281,7 @@ export function useAutomation() {
         try {
             await invoke('stop_script');
             isProcessing.value = false;
-            runningFilePath.value = null; // CLEAR the running hint on terminate
+            runningFilePath.value = null;
 
             handleIncomingLog("TASK:FAIL:EXECUTION:Terminated by User");
             tasks.value.forEach(t => {
@@ -321,14 +294,14 @@ export function useAutomation() {
         tasks.value = [];
         showConsole.value = true;
         isProcessing.value = true;
-        runningFilePath.value = file; // Set hint to RUNNING
+        runningFilePath.value = file;
 
         try {
             handleIncomingLog(`TASK:START:EXECUTION:Running script: ${file}`);
             await invoke('execute_script', { filename: file });
         } catch (err) {
             isProcessing.value = false;
-            runningFilePath.value = null; // Clear hint if failed to start
+            runningFilePath.value = null;
         }
     }
 
@@ -337,26 +310,33 @@ export function useAutomation() {
             const code = await invoke('read_script_content', { filename: 'temp_task.ts' }) as string;
             if (!code || code.trim() === "") return;
 
-            // Use the same metadata regex from loadScript
             const match = code.match(/@metadata\s([A-Za-z0-9+/=]+)/);
-
             if (match && match[1]) {
                 const decodedData = JSON.parse(atob(match[1]));
 
-                // Only restore if there are actually steps (don't overwrite default empty state with nothing)
                 if (decodedData.steps && decodedData.steps.length > 0) {
                     workflow.value.steps = decodedData.steps;
                     workflow.value.config = decodedData.config;
                     workflow.value.name = decodedData.name || "recovered_task";
-                    // Stay in editor mode so user sees their cards
+
+                    if (decodedData.path) {
+                        currentOpenedPath.value = decodedData.path;
+
+                        try {
+                            const originalFileContent = await invoke('read_script_content', {
+                                filename: decodedData.path
+                            }) as string;
+                            lastSavedCode.value = originalFileContent;
+                        } catch (e) {
+                            console.error("Original file missing, treated as new file");
+                            currentOpenedPath.value = null;
+                        }
+                    }
+
                     activeTab.value = 'editor';
-                    console.log("Restored unsaved progress from temp_task.ts");
                 }
             }
-        } catch (e) {
-            // Temp file might not exist yet, which is fine
-            console.log("No previous temp session found.");
-        }
+        } catch (e) { console.log("Clean session."); }
     }
 
     async function handleDelete(file: string) {
@@ -368,7 +348,7 @@ export function useAutomation() {
         if (confirmed) {
             try {
                 await invoke('delete_script', { filename: file });
-                await refreshSaved(); // Refresh the grid
+                await refreshSaved(); 
                 await message("File deleted successfully", { title: "Success" });
             } catch (err) {
                 handleIncomingLog(`TASK:FAIL:SYSTEM:Failed to delete: ${err}`);
@@ -381,7 +361,7 @@ export function useAutomation() {
         const code = await invoke('read_script_content', { filename: file }) as string;
 
         currentOpenedPath.value = file;
-        lastSavedCode.value = code; // Snapshot the file content
+        lastSavedCode.value = code;
 
         const match = code.match(/@metadata\s([A-Za-z0-9+/=]+)/);
         if (match && match[1]) {
@@ -410,7 +390,6 @@ export function useAutomation() {
         try {
             await invoke('rename_script', { oldName: oldFile, newName: finalName });
 
-            // If the renamed file is the one currently open, update pointers
             if (currentOpenedPath.value === oldFile) {
                 currentOpenedPath.value = finalName;
                 workflow.value.name = newName;
@@ -421,8 +400,6 @@ export function useAutomation() {
             handleIncomingLog(`TASK:FAIL:SYSTEM:Rename failed: ${err}`);
         }
     }
-
-    // Remember to return handleRename in the return block
 
     return {
         leftSidebarCollapsed, rightSidebarCollapsed, copiedSourceId, isModified, runningFilePath, showPropertyModal,

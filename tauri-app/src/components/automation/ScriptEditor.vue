@@ -1,30 +1,27 @@
 <script setup lang="ts">
 import { Codemirror } from 'vue-codemirror';
-import { javascript } from '@codemirror/lang-javascript'; // Use the standard JS/TS extension
+import { javascript } from '@codemirror/lang-javascript'; 
 import { ChevronUp, RotateCcw } from 'lucide-vue-next';
 
-// --- IDE EXTENSIONS ---
 import { EditorView, keymap, drawSelection, highlightActiveLine, dropCursor } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { indentOnInput, bracketMatching, foldKeymap, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { lintGutter, lintKeymap, linter } from '@codemirror/lint'; // Added linter
+import { lintGutter, lintKeymap, linter } from '@codemirror/lint'; 
 import { tags as t } from '@lezer/highlight';
 
 defineProps<{ modelValue: string, isManualEdit: boolean }>();
 const emit = defineEmits(['update:modelValue', 'reset']);
 
-// --- THEME DEFINITION ---
 const zincTheme = EditorView.theme({
   "&": { color: "#e2e2e5", backgroundColor: "#09090b" },
   ".cm-content": { caretColor: "#6366f1", padding: "10px 0" },
   
-  // SELECTION MATCHES (The color for other occurrences of a selected word)
   ".cm-selectionMatch": { 
-    backgroundColor: "rgba(99, 102, 241, 0.4) !important", // Indigo background
-    outline: "1px solid #818cf8",                       // Indigo border for sharpness
+    backgroundColor: "rgba(99, 102, 241, 0.4) !important", 
+    outline: "1px solid #818cf8",
     borderRadius: "2px"
   },
 
@@ -32,9 +29,8 @@ const zincTheme = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "rgba(99, 102, 241, 0.05)" },
   ".cm-activeLineGutter": { backgroundColor: "rgba(99, 102, 241, 0.1)", color: "#818cf8" },
   
-  // Syntax Error Underline
   ".cm-lintRange-error": { 
-    textDecoration: "underline wavy #f87171", // Standard red wavy underline
+    textDecoration: "underline wavy #f87171",
     paddingBottom: "1px" 
   }
 }, { dark: true });
@@ -48,7 +44,6 @@ const zincHighlight = HighlightStyle.define([
   { tag: t.operator, color: "#56b6c2" }
 ]);
 
-// --- IDE BEHAVIOR EXTENSIONS ---
 const ideExtensions = [
   javascript({ typescript: true }), 
   zincTheme,
@@ -63,13 +58,10 @@ const ideExtensions = [
   autocompletion(),
   highlightActiveLine(),
   highlightSelectionMatches(),
-  lintGutter(), // Shows dots in the gutter
+  lintGutter(), 
   
-  // STABLE SYNTAX LINTER: This catches standard JS/TS syntax errors
-  // e.g. "const a =" or "function(){" without closing
   linter(() => {
-    // This uses the built-in parser to detect errors
-    return []; // The language extension handles the diagnostics automatically in most cases
+    return []; 
   }),
 
   keymap.of([
@@ -117,7 +109,6 @@ function scrollToTop() {
 :deep(.cm-editor) { outline: none !important; }
 :deep(.cm-scroller) { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
 
-/* ERROR MARKER COLORS */
 :deep(.cm-lint-marker-error) { color: #f87171; }
 :deep(.cm-diagnostic-error) { background-color: #2d1616; border-left: 3px solid #f87171; }
 

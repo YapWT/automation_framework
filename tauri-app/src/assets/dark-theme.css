@@ -1,52 +1,30 @@
-/* Onyx Dark Theme - Deep Neutrals */
 html.dark {
-    /* Main Backgrounds */
     --d-bg-root: #0a0a0b;
-    /* Deepest black-grey */
     --d-bg-panel: #111113;
-    /* Sidebar/Header background */
     --d-bg-surface: #17171a;
-    /* Cards/Inputs background */
     --d-bg-hover: #1f1f23;
-    /* Hover state (Subtle) */
 
-    /* Borders & Dividers */
     --d-border: #242427;
-    /* Muted border */
     --d-border-active: #3f3f46;
-    /* Focused border */
 
-    /* Text Colors */
     --d-text-main: #e2e2e5;
-    /* Soft white/grey */
     --d-text-muted: #71717a;
-    /* Dimmed text (Zinc-500) */
     --d-text-dim: #434348;
-    /* Very dark grey for separators */
 
-    /* Functional Colors */
     --d-accent: #6366f1;
-    /* Indigo */
     --d-danger-bg: #2d1616;
-    /* Muted dark red */
     --d-danger-text: #f87171;
-    /* Pale red */
     --d-success-bg: #11221a;
-    /* Muted dark green */
     --d-success-text: #4ade80;
-    /* Pale green */
 
     --d-bg-deep: #09090b;
     --d-bg-card: #18181b;
     --d-accent-text: #818cf8;
 }
 
-/* 1. RUN BUTTONS (Saved View) */
 html.dark .run-btn {
     background: #064e3b !important;
-    /* Very dark forest green */
     color: #4ade80 !important;
-    /* Pale emerald text */
     border: 1px solid #065f46 !important;
 }
 
@@ -55,7 +33,6 @@ html.dark .run-btn:hover {
     color: #d1fae5 !important;
 }
 
-/* 2. SEARCH & COUNT BADGES */
 html.dark .clear-search,
 html.dark .clear-btn {
     background: var(--d-bg-card) !important;
@@ -74,7 +51,6 @@ html.dark .step-badge {
     border: 1px solid var(--d-border) !important;
 }
 
-/* 3. TAB SWITCHER (Top Left) */
 html.dark .tab-switcher {
     background: var(--d-bg-deep) !important;
     border: 1px solid var(--d-border) !important;
@@ -89,7 +65,6 @@ html.dark .tab-switcher button.active {
     color: var(--d-accent-text) !important;
 }
 
-/* 4. FORM ELEMENTS (Inputs/Selects/Textareas) */
 html.dark .styled-input,
 html.dark .styled-select,
 html.dark .styled-textarea {
@@ -104,7 +79,6 @@ html.dark .styled-textarea:focus {
     border-color: var(--d-accent) !important;
 }
 
-/* 5. ACTION LINKS & TAGS (Properties Sidebar) */
 html.dark .browse-link {
     background: #1e1e22 !important;
     color: var(--d-accent-text) !important;
@@ -117,8 +91,6 @@ html.dark .action-tag {
     border: 1px solid rgba(99, 102, 241, 0.2) !important;
 }
 
-/* 6. PASTE FLOATING BUTTON */
-
 html.dark .step-card.is-copied {
     background: #111116 !important;
     border: 1px dashed #6366f1 !important;
@@ -126,7 +98,6 @@ html.dark .step-card.is-copied {
 
 html.dark .step-card.is-copied::after {
     background: #4f46e5 !important;
-    /* Slightly darker indigo */
 }
 
 html.dark .inline-paste-btn:hover {
@@ -162,18 +133,15 @@ html.dark .paste-fab:hover {
     transform: translateY(-2px);
 }
 
-/* 7. CHECKBOXES (Force Dark Style) */
 html.dark input[type="checkbox"] {
     cursor: pointer;
     filter: invert(0.9) hue-rotate(180deg) brightness(0.8);
 }
 
-/* 8. SCROLLBARS */
 html.dark ::-webkit-scrollbar-thumb {
     background: #27272a !important;
 }
 
-/* 9. SELECTORS/DROPDOWN ARROW FIX */
 html.dark select.styled-select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
     background-position: right 0.5rem center !important;
@@ -183,7 +151,6 @@ html.dark select.styled-select {
     appearance: none;
 }
 
-/* 1. GLOBAL LAYOUT OVERRIDES */
 html.dark,
 html.dark body,
 html.dark .editor-layout,
@@ -195,7 +162,6 @@ html.dark .saved-view {
     color: var(--d-text-main) !important;
 }
 
-/* 2. PANELS & NAVIGATION */
 html.dark .sidebar-left,
 html.dark .sidebar-right,
 html.dark .toolbar,
@@ -212,7 +178,6 @@ html.dark .editor-tools {
     background: transparent !important;
 }
 
-/* 3. ELEMENTS & CARDS */
 html.dark .step-card,
 html.dark .saved-card {
     background: var(--d-bg-surface) !important;
@@ -229,7 +194,6 @@ html.dark .step-badge {
     color: var(--d-text-muted) !important;
 }
 
-/* 4. BUTTONS & HOVERS (No Bright Greys) */
 html.dark .action-item:hover,
 html.dark .tool-icon-btn:hover,
 html.dark .tool-btn:hover,
@@ -244,7 +208,6 @@ html.dark .tool-icon-btn.active {
     border-color: var(--d-border-active) !important;
 }
 
-/* Excel Button - Muted Green */
 html.dark .xl-sidebar-active,
 html.dark .xl-sidebar-btn:hover {
     background: var(--d-success-bg) !important;
@@ -252,7 +215,6 @@ html.dark .xl-sidebar-btn:hover {
     border-color: #065f46 !important;
 }
 
-/* Reset/Delete Buttons - Muted Red */
 html.dark .reset-designer-btn,
 html.dark .del-script-btn:hover,
 html.dark .del-btn:hover {
@@ -261,7 +223,6 @@ html.dark .del-btn:hover {
     border-color: #7f1d1d !important;
 }
 
-/* 5. FORM INPUTS & SELECTORS */
 html.dark .styled-input,
 html.dark .styled-select,
 html.dark .styled-textarea,
@@ -274,13 +235,11 @@ html.dark .find-container {
     color: var(--d-text-main) !important;
 }
 
-/* Force checkboxes to be dark */
 html.dark input[type="checkbox"] {
     accent-color: var(--d-accent);
     filter: invert(1) hue-rotate(180deg) brightness(0.7);
 }
 
-/* 6. CONSOLE SPECIFICS */
 html.dark .console-body {
     background: var(--d-bg-root) !important;
 }
@@ -295,7 +254,6 @@ html.dark .search-empty {
     color: var(--d-text-muted) !important;
 }
 
-/* 7. SCROLLBARS (Dark & Discrete) */
 html.dark ::-webkit-scrollbar-thumb {
     background: #2a2a2e !important;
     border: 2px solid var(--d-bg-root);
@@ -305,7 +263,6 @@ html.dark ::-webkit-scrollbar-track {
     background: var(--d-bg-root) !important;
 }
 
-/* 8. UI WIDGETS */
 html.dark .tab-switcher {
     background: var(--d-bg-root) !important;
     border: 1px solid var(--d-border);
@@ -333,7 +290,6 @@ html.dark .global-config-top {
     border: 1px solid var(--d-border) !important;
 }
 
-/* FABs and Overlays */
 html.dark .scroll-top-fab,
 html.dark .scroll-fab,
 html.dark .floating-scroll-actions {
@@ -342,14 +298,12 @@ html.dark .floating-scroll-actions {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Labels and Headings */
 html.dark label,
 html.dark h3,
 html.dark .brand {
     color: var(--d-text-muted) !important;
 }
 
-/* Resizer Handles (Keep invisible until hover) */
 html.dark .resizer-h,
 html.dark .resize-handle {
     background: transparent;
@@ -367,29 +321,23 @@ html.dark .find-box {
     border: 1px solid #27272a !important;
 }
 
-/* Fix for the Search Text being black */
 html.dark .search-input,
 html.dark .find-input {
     background: transparent !important;
-    /* Use wrapper background */
     color: #fafafa !important;
-    /* Light text */
     border: none !important;
 }
 
-/* Fix for Numeric Arrows */
 html.dark .styled-input {
     background-color: #09090b !important;
     color: #fafafa !important;
     color-scheme: dark;
 }
 
-/* Hover effect for numeric arrows */
 html.dark .styled-input:hover::-webkit-inner-spin-button {
     filter: invert(1) brightness(1);
 }
 
-/* Ensure the 'X' (Clear) button in search doesn't look white */
 html.dark .clear-search {
     background: #18181b !important;
     color: #a1a1aa !important;
@@ -424,10 +372,8 @@ html.dark .is-running {
     border-color: #10b981 !important;
 }
 
-/* Move Mode Visual Hint */
 html.dark .step-card.move-mode {
     border-color: #f59e0b !important;
-    /* Amber-500 */
     background: rgba(245, 158, 11, 0.1) !important;
     animation: pulse-amber 2s infinite;
 }
@@ -446,17 +392,13 @@ html.dark .step-card.move-mode {
     }
 }
 
-/* Move Mode Dark Styling */
 html.dark .step-card.is-moving {
     background: #1c1917 !important;
-    /* Zinc-900 */
     border: 1px dashed #f59e0b !important;
-    /* Amber-500 */
 }
 
 html.dark .step-card.is-moving::after {
     background: #d97706 !important;
-    /* Darker amber */
     color: #fff !important;
 }
 
@@ -469,7 +411,6 @@ html.dark .inline-paste-btn:hover {
     border-color: #4338ca !important;
 }
 
-/* Dark mode keyboard selection */
 html.dark .saved-card.kb-active {
     background: #111116 !important;
     border-color: #6366f1 !important;
@@ -493,15 +434,11 @@ html.dark .count-number {
     color: #818cf8 !important;
 }
 
-/* Maintain your existing styles below */
 .kb-active {
     border-color: #6366f1 !important;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
-/* --- Property Modal Dark Mode (Onyx & Zinc) --- */
-
-/* 1. Overlay & Content Container */
 html.dark .modal-overlay {
     background: rgba(0, 0, 0, 0.8) !important;
     backdrop-filter: blur(8px) !important;
@@ -509,13 +446,10 @@ html.dark .modal-overlay {
 
 html.dark .modal-content {
     background-color: #111113 !important;
-    /* Panel Background */
     border-color: #242427 !important;
-    /* Muted Border */
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* 2. Header & Footer */
 html.dark .modal-header-padding,
 html.dark .modal-footer {
     background-color: #111113 !important;
@@ -525,13 +459,10 @@ html.dark .modal-footer {
 html.dark .modal-title,
 html.dark .prop-section-header h3 {
     color: #fafafa !important;
-    /* Pure Soft White */
 }
 
-/* 3. Global Config Box (Headless Toggle area) */
 html.dark .global-config-top {
     background-color: #09090b !important;
-    /* Deepest Neutral */
     border: 1px solid #242427 !important;
 }
 
@@ -540,36 +471,28 @@ html.dark .separator-light {
     background-color: #242427 !important;
 }
 
-/* 4. Form Elements (The Textboxes, Dropdowns, Textareas) */
 html.dark .styled-input,
 html.dark .styled-select,
 html.dark .styled-textarea {
     background-color: #09090b !important;
-    /* Deepest Black/Grey */
     border: 1px solid #242427 !important;
     color: #e2e2e5 !important;
-    /* Main Text */
 }
 
-/* Focus state for inputs */
 html.dark .styled-input:focus,
 html.dark .styled-select:focus,
 html.dark .styled-textarea:focus {
     border-color: #6366f1 !important;
-    /* Indigo Focus */
 }
 
-/* 5. Custom Checkbox Style inside Modal */
 html.dark .modal-content input[type="checkbox"] {
     accent-color: #6366f1;
     filter: invert(0.9) hue-rotate(180deg) brightness(0.8);
     cursor: pointer;
 }
 
-/* 6. Labels and Action Tags */
 html.dark .modal-content label {
     color: #71717a !important;
-    /* Muted Zinc-500 */
 }
 
 html.dark .action-tag {
@@ -578,7 +501,6 @@ html.dark .action-tag {
     border: 1px solid rgba(99, 102, 241, 0.2) !important;
 }
 
-/* 7. Buttons & Links */
 html.dark .browse-link {
     background: #1e1e22 !important;
     color: #818cf8 !important;
@@ -590,7 +512,6 @@ html.dark .close-panel-btn:hover {
     color: #f87171 !important;
 }
 
-/* 8. Tip Box & Metadata recovery hints */
 html.dark .tip-box {
     background: #16161a !important;
     border: 1px solid #6366f1 !important;
@@ -601,7 +522,6 @@ html.dark .shortcut-hint {
     color: #52525b !important;
 }
 
-/* 9. Scrollbar for the Modal Body */
 html.dark .modal-scroll-area::-webkit-scrollbar-thumb {
     background: #27272a !important;
     border: 3px solid #111113;
@@ -612,30 +532,21 @@ html.dark select,
 html.dark .styled-select,
 html.dark .modal-content select {
     background-color: #09090b !important;
-    /* Deepest background */
     color: #e2e8f0 !important;
-    /* Light text */
     border: 1px solid #242427 !important;
 }
 
-/* --- Shortcut Guide Dark Mode (Onyx & Zinc) --- */
-
-/* 1. Backdrop Overlay */
 html.dark .guide-overlay {
     background: rgba(0, 0, 0, 0.85) !important;
     backdrop-filter: blur(12px) !important;
 }
 
-/* 2. Main Container */
 html.dark .guide-content {
     background-color: var(--d-bg-panel) !important;
-    /* #111113 */
     border-color: var(--d-border) !important;
-    /* #242427 */
     box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.6) !important;
 }
 
-/* 3. Header, Search Section, and Footer backgrounds */
 html.dark .guide-header,
 html.dark .search-section,
 html.dark .guide-footer {
@@ -643,10 +554,8 @@ html.dark .guide-footer {
     border-color: var(--d-border) !important;
 }
 
-/* 4. Search Input UI */
 html.dark .search-input-wrapper {
     background-color: var(--d-bg-root) !important;
-    /* #0a0a0b */
     border-color: var(--d-border) !important;
 }
 
@@ -659,10 +568,8 @@ html.dark .search-input-wrapper input::placeholder {
     color: var(--d-text-muted) !important;
 }
 
-/* 5. Key Cards (The rows containing descriptions and keys) */
 html.dark .key-card {
     background-color: #161619 !important;
-    /* Slightly lighter than panel for depth */
     border-color: var(--d-border) !important;
 }
 
@@ -670,12 +577,10 @@ html.dark .key-desc {
     color: var(--d-text-main) !important;
 }
 
-/* 6. KBD Tags (The physical key look) */
 html.dark kbd {
     background-color: var(--d-bg-root) !important;
     border-color: #333338 !important;
     border-bottom-color: #000000 !important;
-    /* Shadow depth */
     color: var(--d-accent-text) !important;
 }
 
@@ -683,7 +588,6 @@ html.dark .key-sep {
     color: var(--d-text-dim) !important;
 }
 
-/* 7. Typography & Icons */
 html.dark .guide-title {
     color: #fafafa !important;
 }
@@ -695,10 +599,8 @@ html.dark .footer-hint span {
 
 html.dark .group-header {
     color: var(--d-accent) !important;
-    /* Keep Indigo headers */
 }
 
-/* 8. Utility Buttons */
 html.dark .footer-close-btn {
     background-color: var(--d-accent) !important;
     color: white !important;
@@ -713,14 +615,12 @@ html.dark .search-clear {
     color: #a1a1aa !important;
 }
 
-/* 9. Scrollbar for Guide Body */
 html.dark .guide-body::-webkit-scrollbar-thumb {
     background: #27272a !important;
     border: 4px solid var(--d-bg-panel);
     border-radius: 10px;
 }
 
-/* DARK MODE */
 html.dark .context-menu {
     background: #111113 !important;
     border-color: #242427 !important;

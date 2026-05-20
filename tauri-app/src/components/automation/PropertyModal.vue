@@ -12,7 +12,6 @@ defineProps<{
 const emit = defineEmits(['close']);
 const modalRef = ref<HTMLElement | null>(null);
 
-// --- FOCUS TRAP (To keep tabs inside the modal) ---
 const handleTabTrap = (e: KeyboardEvent) => {
   if (e.key !== 'Tab' || !modalRef.value) return;
   const focusable = modalRef.value.querySelectorAll('button, input, select, textarea');
@@ -44,7 +43,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-content" ref="modalRef">
 
-      <!-- HEADER -->
       <div class="prop-section-header modal-header-padding">
         <div class="flex items-center gap-2">
           <h3>Quick Edit</h3>
@@ -57,7 +55,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
 
       <div class="modal-scroll-area">
         <div class="prop-container">
-          <!-- GLOBAL CONFIG -->
           <div class="global-config-top">
             <div class="check-row no-margin">
               <input type="checkbox" v-model="workflow.config.headless" id="m-hd-chk" />
@@ -67,13 +64,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
 
           <div class="separator-light"></div>
 
-          <!-- ELEMENT INDEX -->
           <div v-if="activeStep.params.index !== undefined" class="input-group">
             <label>Element Index (0 = 1st)</label>
             <input type="number" v-model="activeStep.params.index" min="0" class="styled-input" />
           </div>
 
-          <!-- STRATEGIES -->
           <div v-if="strategiesByAction[activeStep.action]" class="input-group">
             <label>Find element by:</label>
             <select v-model="activeStep.params.matchBy" class="styled-select">
@@ -92,7 +87,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
             </div>
           </div>
 
-          <!-- DYNAMIC PARAMETERS -->
           <div v-for="(_, key) in activeStep.params" :key="key">
             <div v-if="!['matchBy', 'exact', 'force', 'timeout', 'index'].includes(String(key))" class="input-group">
               <div class="label-row">
@@ -123,7 +117,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
         </div>
       </div>
 
-      <!-- FOOTER WITH KEYBOARD HINTS -->
       <div class="modal-footer">
         <div class="kb-hints">
           <div class="kb-hint"><kbd>Tab</kbd> <span>Navigate</span></div>
@@ -136,7 +129,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
 </template>
 
 <style scoped>
-/* MODAL LAYOUT */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -180,7 +172,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleTabTrap));
   align-items: center;
 }
 
-/* KEYBOARD HINTS STYLE */
 .kb-hints {
   display: flex;
   gap: 12px;
@@ -206,7 +197,6 @@ kbd {
   font-family: monospace;
 }
 
-/* REPLICATED SIDEBAR STYLES */
 .prop-container {
   width: 100%;
 }

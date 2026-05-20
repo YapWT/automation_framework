@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-// Added 'Type' icon for renaming (looks like text editing)
 import { FileCode, Trash2, FolderSearch, Search, X, Edit3, Eye, Type } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -11,7 +10,7 @@ const props = defineProps<{
   selectedFileIndex: number | null
 }>();
 
-const emit = defineEmits(['load', 'run', 'delete', 'update-index', 'rename']); // Added rename emit
+const emit = defineEmits(['load', 'run', 'delete', 'update-index', 'rename']);
 
 const searchQuery = ref("");
 const filteredFiles = computed(() => {
@@ -71,7 +70,6 @@ function handleCardClick(index: number) {
         </div>
 
         <div class="file-ops">
-          <!-- ADDED RENAME BUTTON -->
           <button class="op-btn" @click.stop="emit('rename', file)" title="Rename Script (R)">
             <Type :size="14" />
           </button>
@@ -102,7 +100,6 @@ function handleCardClick(index: number) {
   font-family: monospace;
 }
 
-/* Maintain existing styles */
 .hints-row {
   display: flex;
   gap: 6px;
@@ -346,7 +343,6 @@ function handleCardClick(index: number) {
   font-size: 0.85rem;
   font-weight: 900;
   color: #6366f1;
-  /* Indigo color to match theme */
 }
 
 .count-text {

@@ -1,18 +1,15 @@
 mod runtime;
-// use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-// use std::time::Instant;
 use tauri::{path::BaseDirectory, Emitter, Manager, State, Window};
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 
-// Simplified AppState without recording fields
 struct AppState {
     running_process: Arc<Mutex<Option<Child>>>,
 }
@@ -29,8 +26,6 @@ fn get_tests_dir() -> PathBuf {
     }
     path.canonicalize().unwrap_or(path)
 }
-
-// --- CORE AUTOMATION COMMANDS ---
 
 #[tauri::command]
 async fn auto_save_temp(code: String) -> Result<String, String> {
@@ -61,7 +56,7 @@ async fn save_permanent_script(code: String, filename: String) -> Result<String,
 
 #[tauri::command]
 fn get_default_save_path() -> Result<String, String> {
-    let path = get_tests_dir(); // Uses your existing helper function
+    let path = get_tests_dir();
     Ok(path.to_string_lossy().into_owned())
 }
 
@@ -73,67 +68,57 @@ async fn read_script_content(filename: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn execute_script(
-    window: Window,
-    state: State<'_, AppState>,
-    filename: String,
-) -> Result<String, String> {
+async fn execute_script(window: Window, state: State<'_, AppState>, filename: String) -> Result<String, String> {
     let app = window.app_handle();
     let mut script_path = get_tests_dir();
     script_path.push(&filename);
+    
+    let script_path_str = script_path.to_string_lossy().to_string();
 
     let is_prod = !cfg!(debug_assertions);
-
+    
     let (mut command, final_engine_path, final_browser_path) = if !is_prod {
         let mut engine_path = std::env::current_dir().unwrap();
-        if engine_path.ends_with("src-tauri") {
-            engine_path.pop();
-        }
+        if engine_path.ends_with("src-tauri") { engine_path.pop(); }
         engine_path.push("automation-engine");
 
-        let cmd = if cfg!(target_os = "windows") {
-            let mut c = Command::new("cmd");
-            c.args(["/C", "npx", "tsx", script_path.to_str().unwrap()]);
-            c
+        let mut c = if cfg!(target_os = "windows") {
+            let mut cmd = Command::new("cmd");
+            cmd.args(["/C", "npx", "tsx", &script_path_str]);
+            cmd
         } else {
             let mut cmd = Command::new("npx");
-            cmd.args(["tsx", script_path.to_str().unwrap()]);
-            #[cfg(unix)]
-            {
-                cmd.process_group(0);
-            }
+            cmd.args(["tsx", &script_path_str]);
+            #[cfg(unix)] { cmd.process_group(0); }
             cmd
         };
-        (cmd, engine_path, None)
+        (c, engine_path, None)
     } else {
-        let sidecar_node = app
-            .path()
-            .resolve("bin/node", BaseDirectory::Resource)
-            .unwrap();
+        let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
+            .map_err(|e| format!("Binary path error: {}", e))?;
+        
         let (prod_engine, prod_browser) = runtime::get_bundle_paths(app);
-
+        
+        let tsx_path = prod_engine.join("node_modules/tsx/dist/cli.mjs");
+        
         let mut c = Command::new(sidecar_node);
-        c.args([
-            "node_modules/tsx/dist/cli.mjs",
-            script_path.to_str().unwrap(),
-        ]);
-        #[cfg(unix)]
-        {
-            c.process_group(0);
-        }
+        c.arg(tsx_path.to_string_lossy().to_string());
+        c.arg(&script_path_str);
+        
+        #[cfg(unix)] { c.process_group(0); }
         (c, prod_engine, Some(prod_browser))
     };
 
     command.current_dir(&final_engine_path);
+    command.stdout(Stdio::piped());
+    command.stderr(Stdio::piped());
+
     if let Some(bp) = final_browser_path {
         command.env("PLAYWRIGHT_BROWSERS_PATH", bp);
     }
 
-    let mut child = command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Spawn error: {}", e))?;
+    let mut child = command.spawn()
+        .map_err(|e| format!("System failed to start the process: {}. Path: {:?}", e, final_engine_path))?;
 
     let stdout = child.stdout.take().ok_or("Stdout capture failed")?;
     let stderr = child.stderr.take().ok_or("Stderr capture failed")?;
@@ -146,32 +131,28 @@ async fn execute_script(
     let win_out = window.clone();
     thread::spawn(move || {
         let r = BufReader::new(stdout);
-        for l in r.lines().flatten() {
-            let _ = win_out.emit("automation-log", l);
-        }
+        for l in r.lines().flatten() { let _ = win_out.emit("automation-log", l); }
     });
 
     let win_err = window.clone();
     thread::spawn(move || {
         let r = BufReader::new(stderr);
-        for l in r.lines().flatten() {
-            let _ = win_err.emit("automation-log", format!("TASK:FAIL:{}", l));
-        }
+        for l in r.lines().flatten() { let _ = win_err.emit("automation-log", format!("TASK:FAIL:{}", l)); }
     });
 
     let running_clone = Arc::clone(&state.running_process);
     let win_fin = window.clone();
-    thread::spawn(move || loop {
-        thread::sleep(std::time::Duration::from_millis(500));
-        let mut lock = running_clone.lock().unwrap();
-        if let Some(child) = lock.as_mut() {
-            if let Ok(Some(status)) = child.try_wait() {
-                let _ = win_fin.emit("automation-finished", status.success());
-                *lock = None;
-                break;
-            }
-        } else {
-            break;
+    thread::spawn(move || {
+        loop {
+            thread::sleep(std::time::Duration::from_millis(500));
+            let mut lock = running_clone.lock().unwrap();
+            if let Some(child) = lock.as_mut() {
+                if let Ok(Some(status)) = child.try_wait() {
+                    let _ = win_fin.emit("automation-finished", status.success());
+                    *lock = None;
+                    break;
+                }
+            } else { break; }
         }
     });
 

@@ -13,7 +13,7 @@ export function useContextMenu() {
         menuTarget.value = { step, index, element: (e.currentTarget as HTMLElement) };
 
         const menuWidth = 200;
-        const menuHeight = 350; // We force the menu to never be larger than this
+        const menuHeight = 350; 
         const padding = 20;
 
         const windowWidth = window.innerWidth;

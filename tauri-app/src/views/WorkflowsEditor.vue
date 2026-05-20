@@ -32,6 +32,8 @@ const {
   showPropertyModal, showShortcutGuide
 } = toRefs(auth);
 
+const isFlipped = ref(false);
+
 useGeneralHotkeys(auth);
 useStepsHotkeys(auth);
 const { selectedFileIndex } = useSavedHotkeys(auth);
@@ -40,15 +42,12 @@ useGuideHotkeys(auth);
 
 const { isMenuVisible, menuX, menuY, menuTarget, openMenu, closeMenu } = useContextMenu();
 
-// --- STATE ---
 const leftWidth = ref(240);
 const rightWidth = ref(300);
 const consoleHeight = ref(240);
 
-// --- IMPROVED AUTO-SCROLL LOGIC ---
 const scrollToActiveStep = () => {
   nextTick(() => {
-    // Target the card that has the 'active' class
     const activeCard = document.querySelector('.step-card.active');
     if (activeCard) {
       activeCard.scrollIntoView({
@@ -59,14 +58,12 @@ const scrollToActiveStep = () => {
   });
 };
 
-// 1. Watch for Step additions (Covers Keyboard shortcuts + Sidebar clicks)
 watch(() => workflow.value.steps.length, (newCount, oldCount) => {
   if (newCount > oldCount) {
     scrollToActiveStep();
   }
 });
 
-// --- RESIZING LOGIC ---
 const startResizing = (direction: 'left' | 'right' | 'vertical', event: MouseEvent) => {
   event.preventDefault();
   const startPos = direction === 'vertical' ? event.clientY : event.clientX;

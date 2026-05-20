@@ -57,25 +57,25 @@ export class ScriptGenerator {
                 const p = step.params;
                 const options = `{ force: ${p.force || false}, timeout: ${p.timeout || 30000} }`;
                 const actualStepNumber = idOffset + idx + 1;
-                
+
                 // Dynamic ID: Rows append, setup steps overwrite cleanly
-                const stepId = isLoop 
-                    ? `\${rowId}_${step.action.toUpperCase()}_${actualStepNumber}` 
+                const stepId = isLoop
+                    ? `\${rowId}_${step.action.toUpperCase()}_${actualStepNumber}`
                     : `${step.action.toUpperCase()}_${actualStepNumber}`;
-                
+
                 const actionDesc = (() => {
                     const act = step.action.toUpperCase();
                     switch (step.action) {
                         case 'navigate': return `${act} to ${val(p.url)}`;
-                        case 'fill':     return `${act} "${p.selector}" with value: "${val(p.value)}"`;
-                        case 'click':    return `${act} on element: "${p.selector}"`;
+                        case 'fill': return `${act} "${p.selector}" with value: "${val(p.value)}"`;
+                        case 'click': return `${act} on element: "${p.selector}"`;
                         case 'wait_for': return `WAIT for "${p.selector}" to be visible`;
                         case 'keyboard_press': return `PRESS KEY: ${p.key}`;
-                        case 'upload':   return `UPLOAD file to "${p.selector}" from: ${val(p.path)}`;
+                        case 'upload': return `UPLOAD file to "${p.selector}" from: ${val(p.path)}`;
                         case 'download': return `DOWNLOAD from "${p.selector}" to: ${val(p.path)}`;
-                        case 'mkdir':    return `CREATE DIRECTORY at: ${val(p.path)}`;
-                        case 'move':     return `MOVE from ${val(p.from)} to ${val(p.to)}`;
-                        default:         return `${act}: ${p.selector || 'Action'}`;
+                        case 'mkdir': return `CREATE DIRECTORY at: ${val(p.path)}`;
+                        case 'move': return `MOVE from ${val(p.from)} to ${val(p.to)}`;
+                        default: return `${act}: ${p.selector || 'Action'}`;
                     }
                 })();
 
@@ -108,11 +108,11 @@ export class ScriptGenerator {
 
         if (needsExcel) {
             const excelPath = workflow.config.excelPath.replace(/\\/g, '/');
-            
+
             // --- SMART LOOP SPLIT LOGIC ---
             // Find the first step that uses an Excel variable {{...}}
             const firstExcelIdx = steps.findIndex((s: any) => JSON.stringify(s).includes('{{'));
-            
+
             let preLoopSteps: any[] = [];
             let loopSteps: any[] = [];
 

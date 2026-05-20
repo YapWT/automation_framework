@@ -4,7 +4,6 @@ export function useGeneralHotkeys(auth: any) {
     const handleKeyDown = (event: KeyboardEvent) => {
         const isCtrl = event.ctrlKey || event.metaKey;
         const isAlt = event.altKey;
-        const isShift = event.shiftKey;
         const key = event.key.toLowerCase();
         // const key = event.key;
         const code = event.code;

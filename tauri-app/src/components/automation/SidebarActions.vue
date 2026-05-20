@@ -19,7 +19,6 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
     </div>
 
     <div class="scroll-area">
-      <!-- WEB CATEGORY -->
       <div class="category">
         <label v-if="!collapsed" class="truncate">Web Interactions</label>
         <div class="action-item" @click="emit('add-step', 'navigate')" title="Open URL (Ctrl + 1)">
@@ -44,7 +43,6 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
 
       <div class="separator"></div>
 
-      <!-- SYSTEM CATEGORY -->
       <div class="category">
         <label v-if="!collapsed" class="truncate">System & Keys</label>
         <div class="action-item" @click="emit('add-step', 'keyboard_press')" title="Key Press (Ctrl + Shift + 1)">
@@ -60,7 +58,6 @@ const emit = defineEmits(['add-step', 'select-excel', 'reset-designer', 'toggle'
 
       <div class="separator"></div>
 
-      <!-- DATA CONTEXT -->
       <div class="footer-actions mt-auto">
         <label v-if="!collapsed" class="truncate">Data Context</label>
 

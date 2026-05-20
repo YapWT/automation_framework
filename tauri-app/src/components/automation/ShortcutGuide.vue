@@ -88,7 +88,6 @@ const filteredGroups = computed(() => {
 <template>
     <div class="guide-overlay" @click.self="emit('close')">
         <div class="guide-content">
-            <!-- HEADER -->
             <div class="guide-header">
                 <div class="header-left">
                     <div class="guide-icon">
@@ -104,7 +103,6 @@ const filteredGroups = computed(() => {
                 </button>
             </div>
 
-            <!-- SEARCH BAR -->
             <div class="search-section">
                 <div class="search-input-wrapper">
                     <Search :size="18" class="search-icon" />
@@ -115,7 +113,6 @@ const filteredGroups = computed(() => {
                 </div>
             </div>
 
-            <!-- SCROLLABLE BODY -->
             <div class="guide-body">
                 <div v-if="filteredGroups.length === 0" class="no-results">
                     <Search :size="40" class="mb-3 opacity-20" />
@@ -128,7 +125,6 @@ const filteredGroups = computed(() => {
                         <span>{{ group.title }}</span>
                     </div>
 
-                    <!-- FLEXIBLE GRID -->
                     <div class="keys-grid">
                         <div v-for="item in group.keys" :key="item.key" class="key-card">
                             <span class="key-desc">{{ item.desc }}</span>
@@ -143,7 +139,6 @@ const filteredGroups = computed(() => {
                 </div>
             </div>
 
-            <!-- FOOTER -->
             <div class="guide-footer">
                 <div class="footer-hint">
                     <Zap :size="14" class="text-amber-500" />
@@ -260,11 +255,8 @@ const filteredGroups = computed(() => {
     margin-bottom: 0.75rem;
 }
 
-/* FLEXIBLE GRID SYSTEM */
 .keys-grid {
     display: grid;
-    /* This tells the grid to make columns at least 280px wide. 
-       If there is only room for 1, it will be 1 column. */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 10px;
 }

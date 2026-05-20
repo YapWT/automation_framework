@@ -41,9 +41,7 @@ const remove = () => {
 
 <template>
     <div class="context-menu" :style="{ top: y + 'px', left: x + 'px' }">
-        <!-- This container is the secret to making it scrollable -->
         <div class="scrollable-content">
-            <!-- STEP ACTIONS -->
             <template v-if="target.step">
                 <div class="menu-label">Step Actions</div>
                 <div class="menu-group">
@@ -63,7 +61,6 @@ const remove = () => {
                 <div class="menu-divider"></div>
             </template>
 
-            <!-- INSERT ACTIONS -->
             <div class="menu-label">{{ target.step ? 'Insert After' : 'Add Step' }}</div>
             <div class="menu-group">
                 <div class="menu-item" @click="props.auth.undo()">
@@ -102,7 +99,6 @@ const remove = () => {
     border-radius: 12px;
     width: 200px;
 
-    /* CRITICAL: We set a max height and hide overflow on the outer shell */
     max-height: 350px;
     display: flex;
     flex-direction: column;
@@ -114,14 +110,12 @@ const remove = () => {
 }
 
 .scrollable-content {
-    /* CRITICAL: This internal div handles the actual scrolling */
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px;
 }
 
-/* Make scrollbar thin and clean */
 .scrollable-content::-webkit-scrollbar {
     width: 4px;
 }
@@ -184,24 +178,5 @@ const remove = () => {
         opacity: 1;
         transform: scale(1);
     }
-}
-
-/* Dark Mode */
-:global(html.dark) .context-menu {
-    background: #111113 !important;
-    border-color: #242427 !important;
-}
-
-:global(html.dark) .menu-item {
-    color: #94a3b8 !important;
-}
-
-:global(html.dark) .menu-item:hover {
-    background: #1e1e22 !important;
-    color: #818cf8 !important;
-}
-
-:global(html.dark) .scrollable-content::-webkit-scrollbar-thumb {
-    background: #242427;
 }
 </style>

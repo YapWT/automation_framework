@@ -16,7 +16,7 @@ const { isDark, toggleTheme } = useTheme();
 </template>
 
 <style scoped>
-/* This component uses the same class as your other icons to match the design */
+
 .tool-icon-btn {
     background: transparent;
     border: 1px solid transparent;
@@ -35,9 +35,4 @@ const { isDark, toggleTheme } = useTheme();
     color: #6366f1;
 }
 
-/* Dark mode specific hover */
-:global(html.dark) .tool-icon-btn:hover {
-    background: #334155;
-    color: #818cf8;
-}
 </style>

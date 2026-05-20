@@ -21,12 +21,10 @@ async function browse(step: any, key: string, isFolder: boolean) {
 
 <template>
   <aside class="sidebar-right">
-    <!-- RESIZE HANDLE -->
     <div class="resize-handle" @mousedown="emit('resize-start', $event)"></div>
 
     <div class="sidebar-main-content">
       <div v-if="activeStep" class="prop-container">
-        <!-- HEADER -->
         <div class="prop-section-header">
           <div class="flex items-center gap-2">
             <h3 class="truncate">Properties</h3>
@@ -37,7 +35,6 @@ async function browse(step: any, key: string, isFolder: boolean) {
           </button>
         </div>
 
-        <!-- NEW LOCATION: RUN HEADLESS (Only shown when step is active) -->
         <div class="global-config-top">
           <div class="check-row no-margin" title="Run without opening a visible browser window">
             <input type="checkbox" v-model="workflow.config.headless" id="hd-chk" />
@@ -47,14 +44,12 @@ async function browse(step: any, key: string, isFolder: boolean) {
 
         <div class="separator-light"></div>
 
-        <!-- Element Index -->
         <div v-if="activeStep.params.index !== undefined" class="input-group">
           <label>Element Index (0 = 1st)</label>
           <input type="number" v-model="activeStep.params.index" min="0" class="styled-input"
             title="Index of the element if multiple matches are found" />
         </div>
 
-        <!-- Finder Strategies -->
         <div v-if="strategiesByAction[activeStep.action]" class="input-group">
           <label>Find element by:</label>
           <select v-model="activeStep.params.matchBy" class="styled-select">
@@ -73,24 +68,19 @@ async function browse(step: any, key: string, isFolder: boolean) {
           </div>
         </div>
 
-        <!-- Dynamic Parameters -->
         <div v-for="(_, key) in activeStep.params" :key="key">
 
-          <!-- 2. Wrap 'key' in String() to fix Error 2339 (toUpperCase) and 2345 (Argument mismatch) -->
           <div v-if="!['matchBy', 'exact', 'force', 'timeout', 'index'].includes(String(key))" class="input-group">
             <div class="label-row">
 
-              <!-- Fix: String(key).toUpperCase() -->
               <label>{{ String(key).toUpperCase() }}</label>
 
-              <!-- Fix: String(key) in the includes check and the browse function -->
               <button v-if="['path', 'from', 'to'].includes(String(key))" class="browse-link"
                 @click="browse(activeStep, String(key), activeStep.action === 'mkdir')">
                 <FolderSearch :size="12" /> Browse
               </button>
             </div>
 
-            <!-- Logic for inputs/selects... -->
             <select v-if="String(key) === 'key'" v-model="activeStep.params[key]" class="styled-select">
               <option value="Enter">Enter</option>
               <option value="Tab">Tab</option>
@@ -110,7 +100,6 @@ async function browse(step: any, key: string, isFolder: boolean) {
         </div>
       </div>
 
-      <!-- Empty State -->
       <div v-else class="empty-props">
         <div class="flex flex-col items-center">
           <MousePointer2 :size="32" class="opacity-10 mb-2" />
@@ -156,7 +145,6 @@ async function browse(step: any, key: string, isFolder: boolean) {
   padding: 1.25rem;
 }
 
-/* NEW STYLES FOR TOP HEADLESS TOGGLE */
 .global-config-top {
   background: #f8fafc;
   padding: 10px;

@@ -17,15 +17,11 @@ function select(index: number) {
 }
 
 function remove(index: number) {
-  // 1. Perform the removal
   props.workflow.steps.splice(index, 1);
 
-  // 2. Handle new selection logic
   if (props.workflow.steps.length === 0) {
     emit('update:selectedIndex', null);
   } else {
-    // Goal: Select the step before the one just deleted.
-    // If the first step (0) was deleted, index - 1 is -1, so we select the new index 0.
     const nextSelection = Math.max(0, index - 1);
     emit('update:selectedIndex', nextSelection);
   }
@@ -34,7 +30,6 @@ function remove(index: number) {
 
 <template>
   <div class="designer-container">
-    <!-- Empty State -->
     <div v-if="workflow.steps.length === 0" class="empty-state">
       <Settings2 :size="48" class="mb-4 opacity-10" />
       <p>Choose an interaction on the left to start building.</p>
@@ -44,7 +39,6 @@ function remove(index: number) {
     </div>
 
     <div class="drag-list-wrapper">
-      <!-- TOP PASTE ZONE -->
       <div v-if="clipboardStep && workflow.steps.length > 0" class="inline-paste-btn" @click="emit('paste', 0)">
         <Plus :size="12" /> Insert Step Here
       </div>
@@ -58,8 +52,8 @@ function remove(index: number) {
               'is-copied': clipboardStep && element.id === copiedSourceId,
               'is-moving': isMoveMode && selectedIndex === index
             }" @click="select(index)" @contextmenu.stop="(e) => {
-    select(index); // 1. Change selection to this card
-    $emit('step-contextmenu', e, element, index); // 2. Trigger menu
+    select(index); 
+    $emit('step-contextmenu', e, element, index); 
   }">
               <div class="handle" title="Move Step (Ctrl + M)">
                 <GripVertical :size="16" />
@@ -82,7 +76,6 @@ function remove(index: number) {
               </div>
             </div>
 
-            <!-- IN-BETWEEN PASTE ZONE -->
             <div v-if="clipboardStep" class="inline-paste-btn" @click="emit('paste', index + 1)">
               <Plus :size="12" /> Insert Step Here
             </div>
@@ -91,7 +84,6 @@ function remove(index: number) {
       </draggable>
     </div>
 
-    <!-- BOTTOM FLOATING CONTROLS -->
     <div v-if="clipboardStep" class="paste-controls">
       <button class="paste-fab" @click="emit('paste')">
         <Clipboard :size="14" /> Paste at Bottom
@@ -167,14 +159,12 @@ function remove(index: number) {
   margin-bottom: 0.5rem;
 }
 
-/* ACTIVE STATE */
 .step-card.active {
   border-color: #6366f1;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
   z-index: 2;
 }
 
-/* COPIED STATE */
 .step-card.is-copied {
   border: 1px dashed #6366f1;
   background: #f8faff;
@@ -193,7 +183,6 @@ function remove(index: number) {
   border-radius: 4px;
 }
 
-/* MOVE MODE UI */
 .step-card.is-moving {
   border: 1px dashed #f59e0b;
   background: #fffbeb;

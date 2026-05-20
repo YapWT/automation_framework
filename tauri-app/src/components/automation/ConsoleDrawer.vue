@@ -95,13 +95,10 @@ const scroll = (direction: 'top' | 'bottom') => {
   flex-direction: column;
   flex-shrink: 0;
   position: relative;
-  /* REMOVED: transition: height 0.2s ease; <--- THIS WAS THE LAG CAUSE */
 }
 
-/* Apply transition ONLY when entering/exiting fullscreen, not during drag */
 .console-drawer.is-fullscreen {
   position: fixed !important;
-  /* Break out of the flex container */
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
@@ -109,7 +106,6 @@ const scroll = (direction: 'top' | 'bottom') => {
   width: 100vw !important;
   height: 100vh !important;
   z-index: 9999 !important;
-  /* Cover everything (sidebars, header) */
   border-top: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -123,7 +119,6 @@ const scroll = (direction: 'top' | 'bottom') => {
 .resize-handle-v {
   position: absolute;
   top: -4px;
-  /* Increased hit area slightly */
   left: 0;
   right: 0;
   height: 8px;
@@ -134,10 +129,8 @@ const scroll = (direction: 'top' | 'bottom') => {
 
 .resize-handle-v:hover {
   background: rgba(99, 102, 241, 0.4);
-  /* Visual feedback on hover */
 }
 
-/* Rest of your styles remain unchanged... */
 .console-header {
   padding: 8px 16px;
   display: flex;
