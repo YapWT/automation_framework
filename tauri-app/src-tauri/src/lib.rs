@@ -144,15 +144,35 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         };
         (c, engine_path, Some(browser_path))
     } else {
-        let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
+        let mut sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
             .map_err(|e| format!("Failed to resolve node binary: {}", e))?;
+        
+        // Normalize Windows extended-path prefix
+        if cfg!(target_os = "windows") {
+            let path_str = sidecar_node.to_string_lossy().to_string();
+            if path_str.starts_with("\\\\?\\") {
+                sidecar_node = PathBuf::from(path_str.replace("\\\\?\\", ""));
+            }
+        }
         
         // Verify node binary exists
         if !sidecar_node.exists() {
             return Err(format!("Node binary not found at: {:?}", sidecar_node));
         }
         
-        let (prod_engine, prod_browser) = runtime::get_bundle_paths(&app);
+        let (mut prod_engine, mut prod_browser) = runtime::get_bundle_paths(&app);
+        
+        // Normalize Windows extended-path prefix for all bundled paths
+        if cfg!(target_os = "windows") {
+            let engine_str = prod_engine.to_string_lossy().to_string();
+            if engine_str.starts_with("\\\\?\\") {
+                prod_engine = PathBuf::from(engine_str.replace("\\\\?\\", ""));
+            }
+            let browser_str = prod_browser.to_string_lossy().to_string();
+            if browser_str.starts_with("\\\\?\\") {
+                prod_browser = PathBuf::from(browser_str.replace("\\\\?\\", ""));
+            }
+        }
         
         // Verify engine directory exists
         if !prod_engine.exists() {
