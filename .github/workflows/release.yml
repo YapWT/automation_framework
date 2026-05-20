@@ -10,24 +10,37 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      
+
+      # --- THIS IS THE NEW CRITICAL STEP ---
+      - name: Install frontend dependencies
+        run: |
+          npm install                       # Installs root dependencies (like prepare-sidecar)
+          cd tauri-app && npm install       # Installs @tauri-apps/cli and app dependencies
+      # --------------------------------------
+
       - name: Prepare Sidecar
         shell: bash
         run: |
           node prepare-sidecar.js
-          mkdir -p automation-engine/local-browsers
-          mkdir -p automation-engine/node_modules/typescript/lib
+          # Create placeholder folders to prevent "glob not found" errors
+          mkdir -p tauri-app/automation-engine/local-browsers
+          touch tauri-app/automation-engine/local-browsers/.gitkeep
+          mkdir -p tauri-app/automation-engine/node_modules/typescript/lib
+          touch tauri-app/automation-engine/node_modules/typescript/lib/.gitkeep
 
       - name: Build App
         uses: tauri-apps/tauri-action@v0
@@ -39,4 +52,5 @@ jobs:
           releaseBody: "Automated Build"
           releaseDraft: true
           prerelease: false
+          # Ensure this points to your tauri-app folder
           projectPath: "tauri-app"
