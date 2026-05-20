@@ -1,3 +1,14 @@
 
 /tauri-app/automation-engine/tests
 tauri-app/automation-engine/tests/temp_task.ts
+# Ignore the binaries created by the script
+tauri-app/src-tauri/bin/node-*
+
+# Ignore downloaded browsers
+tauri-app/automation-engine/local-browsers/*
+!tauri-app/automation-engine/local-browsers/.gitkeep
+
+# Standard ignores
+node_modules/
+dist/
+tauri-app/src-tauri/target/

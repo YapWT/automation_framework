@@ -1,0 +1,9 @@
+{
+  "name": "automation-framework-root",
+  "private": true,
+  "scripts": {
+    "prepare-bins": "node prepare-sidecar.js",
+    "dev": "npm run prepare-bins && cd tauri-app && npm run tauri dev",
+    "build": "npm run prepare-bins && cd tauri-app && npm run tauri build"
+  }
+}

@@ -25,3 +25,11 @@ dist-ssr
 
 src-tauri/bin/node-*
 automation-engine/local-browsers/
+
+# Ignore the sidecar binaries
+tauri-app/src-tauri/bin/*
+!tauri-app/src-tauri/bin/.gitkeep
+
+# Ignore downloaded browsers
+automation-engine/local-browsers/*
+!automation-engine/local-browsers/.gitkeep

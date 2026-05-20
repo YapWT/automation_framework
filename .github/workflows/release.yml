@@ -1,68 +1,42 @@
-name: "Publish Release"
-on:
-  push:
-    branches: [ main ]
+name: Release
+on: [push]
 
 jobs:
-  publish-tauri:
-    permissions:
-      contents: write
+  release:
     strategy:
       fail-fast: false
-      # CRITICAL: This stops the GitHub "Unicorn" error by building one OS at a time
-      max-parallel: 1 
       matrix:
-        include:
-          - platform: "macos-latest"
-            target: "aarch64-apple-darwin" # Apple Silicon (Smallest size)
-          - platform: "macos-latest"
-            target: "x86_64-apple-darwin"  # Intel Macs (Smallest size)
-          - platform: "ubuntu-22.04"
-            target: ""
-          - platform: "windows-latest"
-            target: ""
-
+        platform: [macos-latest, ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - name: setup node
         uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
-
+          node-version: 20
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
-
-      - name: Prepare Sidecars and Browsers
-        shell: bash
-        working-directory: tauri-app 
         run: |
-          npm install
-          # 1. This script prunes devDependencies (shrinks size significantly)
-          node $GITHUB_WORKSPACE/build-scripts/bundle-engine.js
-          
-          mkdir -p src-tauri/bin
-          if [ "${{ matrix.platform }}" == "windows-latest" ]; then
-            cp $(which node) src-tauri/bin/node-x86_64-pc-windows-msvc.exe
-          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            # 2. Match the specific CPU target for this runner (stays small)
-            cp $(which node) src-tauri/bin/node-${{ matrix.target }}
-          else
-            cp $(which node) src-tauri/bin/node-x86_64-unknown-linux-gnu
-          fi
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      
+      - name: Prepare Sidecar
+        shell: bash
+        run: |
+          node prepare-sidecar.js
+          mkdir -p automation-engine/local-browsers
+          mkdir -p automation-engine/node_modules/typescript/lib
 
-      - name: Build and Release
+      - name: Build App
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: tauri-app 
           tagName: v__VERSION__
-          releaseName: "Automation App v__VERSION__"
+          releaseName: "App v__VERSION__"
+          releaseBody: "Automated Build"
           releaseDraft: true
-          # 3. Only build for the specific target architecture
-          args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
+          prerelease: false
+          projectPath: "tauri-app"
