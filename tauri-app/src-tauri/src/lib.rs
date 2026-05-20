@@ -101,6 +101,9 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     
     let is_prod = !cfg!(debug_assertions);
     
+    // Collect all validation errors
+    let mut errors = Vec::new();
+    
     // Choose appropriate script location based on environment
     let script_path = if is_prod {
         let (prod_engine, _) = runtime::get_bundle_paths(&app);
@@ -115,9 +118,9 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     
     // Verify script exists
     if !script_path.exists() {
-        return Err(format!("Script not found: {:?}\nExpected at: {:?}", script_path, script_path.canonicalize().ok()));
+        errors.push(format!("✗ Script not found at: {}", script_path.display()));
     }
-    
+
     // Normalize Windows paths (remove \\?\ prefix)
     let script_path_str = if cfg!(target_os = "windows") {
         script_path.to_string_lossy().to_string().replace("\\\\?\\", "")
@@ -144,8 +147,12 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         };
         (c, engine_path, Some(browser_path))
     } else {
+        // Production mode - validate all paths
         let mut sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
-            .map_err(|e| format!("Failed to resolve node binary: {}", e))?;
+            .unwrap_or_else(|e| {
+                errors.push(format!("✗ Failed to resolve node binary: {}", e));
+                PathBuf::new()
+            });
         
         // Normalize Windows extended-path prefix
         if cfg!(target_os = "windows") {
@@ -157,7 +164,7 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         
         // Verify node binary exists
         if !sidecar_node.exists() {
-            return Err(format!("Node binary not found at: {:?}", sidecar_node));
+            errors.push(format!("✗ Node binary not found at:\n  {}\n  (Make sure 'node prepare-sidecar.js' was run)", sidecar_node.display()));
         }
         
         let (mut prod_engine, mut prod_browser) = runtime::get_bundle_paths(&app);
@@ -176,23 +183,23 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         
         // Verify engine directory exists
         if !prod_engine.exists() {
-            return Err(format!("Engine directory not found at: {:?}", prod_engine));
+            errors.push(format!("✗ Engine directory not found at:\n  {}", prod_engine.display()));
         }
         
         // Verify browsers are installed
         let chromium_check = prod_browser.join("chromium-1223");
         if !chromium_check.exists() {
-            return Err(format!(
-                "Chromium browsers not found at: {:?}\nPlease run: npm run prepare-engine",
-                prod_browser
-            ));
+            errors.push(format!("✗ Chromium browsers not installed at:\n  {}\n  Fix: npm run prepare-engine", prod_browser.display()));
         }
         
         let tsx_path = prod_engine.join("node_modules/tsx/dist/cli.mjs");
-        
-        // Verify tsx is installed
         if !tsx_path.exists() {
-            return Err(format!("tsx not found at: {:?}\nPlease run: npm install in automation-engine", tsx_path));
+            errors.push(format!("✗ tsx not installed at:\n  {}\n  Fix: npm run prepare-engine", tsx_path.display()));
+        }
+        
+        // If we have validation errors, report them all
+        if !errors.is_empty() {
+            return Err(format!("Pre-flight checks failed:\n\n{}", errors.join("\n\n")));
         }
         
         // Use forward slashes for consistency across platforms
@@ -205,6 +212,11 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         #[cfg(unix)] { c.process_group(0); }
         (c, prod_engine, Some(prod_browser))
     };
+
+    // Report any errors collected so far
+    if !errors.is_empty() {
+        return Err(format!("Pre-flight checks failed:\n\n{}", errors.join("\n\n")));
+    }
 
     command.current_dir(&final_engine_path);
     command.stdout(Stdio::piped());

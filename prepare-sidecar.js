@@ -19,18 +19,29 @@ try {
     process.exit(1);
 }
 
-// 2. Determine binary name
+// 2. Determine binary name (Tauri needs platform-specific names)
 const extension = process.platform === 'win32' ? '.exe' : '';
-const binaryName = `node-${targetTriple}${extension}`;
-const destPath = path.join(targetDir, binaryName);
+const platformBinaryName = `node-${targetTriple}${extension}`;
+const genericBinaryName = `node${extension}`;
+
+const targetSpecificPath = path.join(targetDir, platformBinaryName);
+const genericPath = path.join(targetDir, genericBinaryName);
 
 // 3. Copy your current Node binary to the sidecar location
 try {
     const nodePath = process.execPath;
     console.log(`Setting up sidecar for ${targetTriple}...`);
-    fs.copyFileSync(nodePath, destPath);
-    fs.chmodSync(destPath, 0o755); // Make it executable
-    console.log(`Success: Sidecar created at ${destPath}`);
+    
+    // Copy to platform-specific name (what Tauri prefers)
+    fs.copyFileSync(nodePath, targetSpecificPath);
+    fs.chmodSync(targetSpecificPath, 0o755);
+    console.log(`✓ Platform-specific binary: ${platformBinaryName}`);
+    
+    // Also create a generic 'node' copy for fallback
+    fs.copyFileSync(nodePath, genericPath);
+    fs.chmodSync(genericPath, 0o755);
+    console.log(`✓ Generic binary: ${genericBinaryName}`);
+    console.log(`\nSidecar ready at: ${targetDir}`);
 } catch (e) {
     console.error(`Failed to copy node binary: ${e.message}`);
 }
