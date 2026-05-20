@@ -11,9 +11,7 @@ async function runAutomation() {
 
     // 3. Start the sidecar
     // Note: Use 'bin/node' because that matches your tauri.conf.json name
-    const command = Command.sidecar('bin/node', [scriptPath], {
-      cwd: engineDir // Set the working directory to the engine folder
-    });
+    const command = Command.sidecar('bin/node', [scriptPath]); 
 
     command.on('close', data => {
       console.log(`Command finished with code ${data.code}`);

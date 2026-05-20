@@ -16,6 +16,19 @@
     "shell:allow-execute",
     "dialog:allow-save",
     "dialog:allow-message", 
-    "dialog:allow-ask"
+    "dialog:allow-ask",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": "bin/node"
+        }
+      ]
+    }
   ]
 }
