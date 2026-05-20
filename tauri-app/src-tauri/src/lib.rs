@@ -1,11 +1,10 @@
-mod runtime;
 use std::fs;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use tauri::{path::BaseDirectory, Emitter, Manager, State, Window};
+use tauri::{Emitter, State, Window};
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
@@ -25,29 +24,9 @@ fn get_tests_dir() -> PathBuf {
     path.canonicalize().unwrap_or(path)
 }
 
-fn get_engine_tests_dir(engine_path: &PathBuf) -> PathBuf {
-    let mut path = engine_path.clone();
-    path.push("tests");
-    if !path.exists() {
-        let _ = fs::create_dir_all(&path);
-    }
-    path.canonicalize().unwrap_or(path)
-}
-
 #[tauri::command]
-async fn auto_save_temp(window: Window, code: String) -> Result<String, String> {
-    let app = window.app_handle();
-    let is_prod = !cfg!(debug_assertions);
-    
-    let mut path = if is_prod {
-        // In production, save to bundled engine's tests directory
-        let (prod_engine, _) = runtime::get_bundle_paths(&app);
-        get_engine_tests_dir(&prod_engine)
-    } else {
-        // In development, save to temp directory
-        get_tests_dir()
-    };
-    
+async fn auto_save_temp(_window: Window, code: String) -> Result<String, String> {
+    let mut path = get_tests_dir();
     path.push("temp_task.ts");
     
     // Remove the extended-path prefix on Windows for consistency
@@ -97,28 +76,12 @@ async fn read_script_content(filename: String) -> Result<String, String> {
 
 #[tauri::command]
 async fn execute_script(window: Window, state: State<'_, AppState>, filename: String) -> Result<String, String> {
-    let app = window.app_handle();
-    
-    let is_prod = !cfg!(debug_assertions);
-    
-    // Collect all validation errors
-    let mut errors = Vec::new();
-    
-    // Choose appropriate script location based on environment
-    let script_path = if is_prod {
-        let (prod_engine, _) = runtime::get_bundle_paths(&app);
-        let mut path = get_engine_tests_dir(&prod_engine);
-        path.push(&filename);
-        path
-    } else {
-        let mut path = get_tests_dir();
-        path.push(&filename);
-        path
-    };
+    let mut script_path = get_tests_dir();
+    script_path.push(&filename);
     
     // Verify script exists
     if !script_path.exists() {
-        errors.push(format!("✗ Script not found at: {}", script_path.display()));
+        return Err(format!("✗ Script not found at: {}", script_path.display()));
     }
 
     // Normalize Windows paths (remove \\?\ prefix)
@@ -128,150 +91,34 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         script_path.to_string_lossy().to_string()
     };
 
-    let (mut command, final_engine_path, final_browser_path) = if !is_prod {
-        let mut engine_path = std::env::current_dir().unwrap();
-        if engine_path.ends_with("src-tauri") { engine_path.pop(); }
-        engine_path.push("automation-engine");
-        
-        let browser_path = engine_path.join("local-browsers");
+    let mut engine_path = std::env::current_dir().unwrap();
+    if engine_path.ends_with("src-tauri") { engine_path.pop(); }
+    engine_path.push("automation-engine");
+    
+    let browser_path = engine_path.join("local-browsers");
 
-        let c = if cfg!(target_os = "windows") {
-            let mut cmd = Command::new("cmd");
-            cmd.args(["/C", "npx", "tsx", &script_path_str]);
-            cmd
-        } else {
-            let mut cmd = Command::new("npx");
-            cmd.args(["tsx", &script_path_str]);
-            #[cfg(unix)] { cmd.process_group(0); }
-            cmd
-        };
-        (c, engine_path, Some(browser_path))
+    let mut command = if cfg!(target_os = "windows") {
+        let mut cmd = Command::new("cmd");
+        cmd.args(["/C", "npx", "tsx", &script_path_str]);
+        cmd
     } else {
-        // Production mode - validate all paths
-        let mut sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
-            .unwrap_or_else(|e| {
-                errors.push(format!("✗ Failed to resolve node binary: {}", e));
-                PathBuf::new()
-            });
-        
-        // Helper function to normalize Windows paths
-        fn normalize_path(path: &Path) -> PathBuf {
-            let path_str = path.to_string_lossy().to_string();
-            if cfg!(target_os = "windows") && path_str.starts_with("\\\\?\\") {
-                PathBuf::from(path_str.strip_prefix("\\\\?\\").unwrap())
-            } else {
-                path.to_path_buf()
-            }
-        }
-        
-        // Normalize the resolved path
-        sidecar_node = normalize_path(&sidecar_node);
-        
-        // On Windows, also check for .exe version
-        let mut checked_paths = vec![sidecar_node.clone()];
-        if cfg!(target_os = "windows") {
-            let exe_path = PathBuf::from(format!("{}.exe", sidecar_node.display()));
-            checked_paths.push(exe_path.clone());
-            
-            if exe_path.exists() {
-                sidecar_node = exe_path;
-            }
-        }
-        
-        // Try fallback locations if not found
-        if !sidecar_node.exists() {
-            let resource_path = app.path()
-                .resolve("", BaseDirectory::Resource)
-                .unwrap_or_default();
-            let resource_path = normalize_path(&resource_path);
-            
-            // Try multiple fallback locations
-            let fallbacks = vec![
-                resource_path.join("bin").join("node"),
-                resource_path.join("bin").join("node.exe"),
-                resource_path.join("_up_").join("bin").join("node"),
-                resource_path.join("_up_").join("bin").join("node.exe"),
-            ];
-            
-            for fallback in &fallbacks {
-                checked_paths.push(fallback.clone());
-                if fallback.exists() {
-                    sidecar_node = fallback.clone();
-                    break;
-                }
-            }
-        }
-        
-        // Verify node binary exists
-        if !sidecar_node.exists() {
-            let checked_str = checked_paths
-                .iter()
-                .map(|p| format!("  • {}", p.display()))
-                .collect::<Vec<_>>()
-                .join("\n");
-            let resource_path = app.path()
-                .resolve("", BaseDirectory::Resource)
-                .unwrap_or_default();
-            errors.push(format!("✗ Node binary not found. Checked locations:\n{}\nResource path: {}\nFix: Run 'npm run prepare-sidecar' before building", checked_str, resource_path.display()));
-        }
-        
-        let (mut prod_engine, mut prod_browser) = runtime::get_bundle_paths(&app);
-        
-        // Normalize Windows extended-path prefix for all bundled paths using the helper
-        prod_engine = normalize_path(&prod_engine);
-        prod_browser = normalize_path(&prod_browser);
-        
-        // Verify engine directory exists
-        if !prod_engine.exists() {
-            errors.push(format!("✗ Engine directory not found at:\n  {}", prod_engine.display()));
-        }
-        
-        // Verify browsers are installed
-        let chromium_check = prod_browser.join("chromium-1223");
-        if !chromium_check.exists() {
-            errors.push(format!("✗ Chromium browsers not installed at:\n  {}\n  Fix: npm run prepare-engine", prod_browser.display()));
-        }
-        
-        let tsx_path = prod_engine.join("node_modules/tsx/dist/cli.mjs");
-        if !tsx_path.exists() {
-            errors.push(format!("✗ tsx not installed at:\n  {}\n  Fix: npm run prepare-engine", tsx_path.display()));
-        }
-        
-        // If we have validation errors, report them all
-        if !errors.is_empty() {
-            return Err(format!("Pre-flight checks failed:\n\n{}", errors.join("\n\n")));
-        }
-        
-        // Use forward slashes for consistency across platforms
-        let tsx_path_normalized = tsx_path.to_string_lossy().replace("\\", "/");
-        
-        let mut c = Command::new(sidecar_node);
-        c.arg(tsx_path_normalized);
-        c.arg(&script_path_str);
-        
-        #[cfg(unix)] { c.process_group(0); }
-        (c, prod_engine, Some(prod_browser))
+        let mut cmd = Command::new("npx");
+        cmd.args(["tsx", &script_path_str]);
+        #[cfg(unix)] { cmd.process_group(0); }
+        cmd
     };
 
-    // Report any errors collected so far
-    if !errors.is_empty() {
-        return Err(format!("Pre-flight checks failed:\n\n{}", errors.join("\n\n")));
-    }
-
-    command.current_dir(&final_engine_path);
+    command.current_dir(&engine_path);
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
 
     // Set NODE_PATH so imported modules can be found
-    let node_modules_path = final_engine_path.join("node_modules");
+    let node_modules_path = engine_path.join("node_modules");
     command.env("NODE_PATH", node_modules_path.to_string_lossy().to_string());
-
-    if let Some(bp) = final_browser_path {
-        command.env("PLAYWRIGHT_BROWSERS_PATH", bp);
-    }
+    command.env("PLAYWRIGHT_BROWSERS_PATH", &browser_path);
 
     let mut child = command.spawn()
-        .map_err(|e| format!("System failed to start the process: {}. Engine path: {:?}", e, final_engine_path))?;
+        .map_err(|e| format!("System failed to start the process: {}. Engine path: {:?}", e, engine_path))?;
 
     let stdout = child.stdout.take().ok_or("Stdout capture failed")?;
     let stderr = child.stderr.take().ok_or("Stderr capture failed")?;
