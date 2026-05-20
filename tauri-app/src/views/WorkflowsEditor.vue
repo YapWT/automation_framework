@@ -12,7 +12,6 @@ import StepDesigner from '../components/automation/StepDesigner.vue';
 import PropertyEditor from '../components/automation/PropertyEditor.vue';
 import ScriptEditor from '../components/automation/ScriptEditor.vue';
 import SavedScriptsList from '../components/automation/SavedScriptsList.vue';
-import { useGeneralHotkeys } from '../composables/useGeneralHotkeys'
 import { useStepsHotkeys as useStepsHotkeys } from '../composables/useStepsHotkeys';
 import { useSavedHotkeys } from '../composables/useSavedHotkeys';
 import { useConsoleHotkeys } from '../composables/useConsoleHotkeys';
@@ -32,7 +31,6 @@ const {
   showPropertyModal, showShortcutGuide
 } = toRefs(auth);
 
-useGeneralHotkeys(auth);
 useStepsHotkeys(auth);
 const { selectedFileIndex } = useSavedHotkeys(auth);
 useConsoleHotkeys(auth);
@@ -195,8 +193,7 @@ watch(finalCode, async (newCode) => {
     </Teleport>
 
     <Teleport to="body">
-      <ContextMenu v-if="isMenuVisible" :x="menuX" :y="menuY" :isFlipped="isFlipped" :target="menuTarget" :auth="auth"
-        @close="closeMenu" />
+      <ContextMenu v-if="isMenuVisible" :x="menuX" :y="menuY" :target="menuTarget" :auth="auth" @close="closeMenu" />
     </Teleport>
 
   </div>

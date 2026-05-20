@@ -27,7 +27,7 @@ fn get_tests_dir() -> PathBuf {
     if !path.exists() {
         fs::create_dir_all(&path).unwrap();
     }
-    path.canonicalize().unwrap_or(path)
+    path
 }
 
 // --- CORE AUTOMATION COMMANDS ---
