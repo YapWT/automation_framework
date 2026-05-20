@@ -148,42 +148,49 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         (c, engine_path, Some(browser_path))
     } else {
         // Production mode - validate all paths
-        let mut sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
-            .unwrap_or_else(|e| {
-                errors.push(format!("✗ Failed to resolve node binary: {}", e));
-                PathBuf::new()
-            });
+        let resource_path = app.path()
+            .resolve("", BaseDirectory::Resource)
+            .unwrap_or_default();
         
-        // Normalize Windows extended-path prefix
-        if cfg!(target_os = "windows") {
-            let path_str = sidecar_node.to_string_lossy().to_string();
-            if path_str.starts_with("\\\\?\\") {
-                sidecar_node = PathBuf::from(path_str.replace("\\\\?\\", ""));
-            }
-        }
+        let mut sidecar_node = PathBuf::new();
+        let exe_suffix = if cfg!(target_os = "windows") { ".exe" } else { "" };
         
-        // Try fallback locations if not found
-        if !sidecar_node.exists() {
-            let resource_path = app.path()
-                .resolve("", BaseDirectory::Resource)
-                .unwrap_or_default();
-            
-            // Try _up_/bin/node
-            let fallback1 = resource_path.join("_up_").join("bin").join("node");
-            if fallback1.exists() {
-                sidecar_node = fallback1;
-            } else {
-                // Try _up_/bin/node.exe (Windows)
-                let fallback2 = resource_path.join("_up_").join("bin").join("node.exe");
-                if fallback2.exists() {
-                    sidecar_node = fallback2;
+        // Try multiple locations for the node binary
+        let candidate_paths = vec![
+            // Primary: bin/node in resource directory
+            resource_path.join("bin").join(format!("node{}", exe_suffix)),
+            // _up_/bin/node (Tauri production extraction)
+            resource_path.join("_up_").join("bin").join(format!("node{}", exe_suffix)),
+            // root bin/node (fallback)
+            resource_path.join("bin").join("node"),
+            // _up_/bin/node without .exe on Windows
+            resource_path.join("_up_").join("bin").join("node"),
+        ];
+        
+        for candidate in candidate_paths {
+            // Normalize Windows extended-path prefix
+            let mut normalized = candidate.clone();
+            if cfg!(target_os = "windows") {
+                let path_str = normalized.to_string_lossy().to_string();
+                if path_str.starts_with("\\\\?\\") {
+                    normalized = PathBuf::from(path_str.replace("\\\\?\\", ""));
                 }
+            }
+            
+            if normalized.exists() {
+                sidecar_node = normalized;
+                break;
             }
         }
         
         // Verify node binary exists
-        if !sidecar_node.exists() {
-            errors.push(format!("✗ Node binary not found at:\n  {}\n  (Make sure 'node prepare-sidecar.js' was run)", sidecar_node.display()));
+        if !sidecar_node.exists() || sidecar_node.as_os_str().is_empty() {
+            errors.push(format!(
+                "✗ Node binary not found. Checked locations:\n  • {}/bin/node\n  • {}/_up_/bin/node\n  Resource path: {}\n  Fix: Run 'npm run prepare-sidecar' before building",
+                resource_path.display(),
+                resource_path.display(),
+                resource_path.display()
+            ));
         }
         
         let (mut prod_engine, mut prod_browser) = runtime::get_bundle_paths(&app);
