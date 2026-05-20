@@ -25,6 +25,15 @@ fn get_tests_dir() -> PathBuf {
     path.canonicalize().unwrap_or(path)
 }
 
+fn get_engine_tests_dir(engine_path: &PathBuf) -> PathBuf {
+    let mut path = engine_path.clone();
+    path.push("tests");
+    if !path.exists() {
+        let _ = fs::create_dir_all(&path);
+    }
+    path.canonicalize().unwrap_or(path)
+}
+
 #[tauri::command]
 async fn auto_save_temp(code: String) -> Result<String, String> {
     let mut path = get_tests_dir();
@@ -68,13 +77,23 @@ async fn read_script_content(filename: String) -> Result<String, String> {
 #[tauri::command]
 async fn execute_script(window: Window, state: State<'_, AppState>, filename: String) -> Result<String, String> {
     let app = window.app_handle();
-    let mut script_path = get_tests_dir();
-    script_path.push(&filename);
+    
+    let is_prod = !cfg!(debug_assertions);
+    
+    // Choose appropriate script location based on environment
+    let script_path = if is_prod {
+        let (prod_engine, _) = runtime::get_bundle_paths(&app);
+        let mut path = get_engine_tests_dir(&prod_engine);
+        path.push(&filename);
+        path
+    } else {
+        let mut path = get_tests_dir();
+        path.push(&filename);
+        path
+    };
     
     let script_path_str = script_path.to_string_lossy().to_string();
 
-    let is_prod = !cfg!(debug_assertions);
-    
     let (mut command, final_engine_path, final_browser_path) = if !is_prod {
         let mut engine_path = std::env::current_dir().unwrap();
         if engine_path.ends_with("src-tauri") { engine_path.pop(); }
@@ -82,7 +101,7 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         
         let browser_path = engine_path.join("local-browsers");
 
-        let mut c = if cfg!(target_os = "windows") {
+        let c = if cfg!(target_os = "windows") {
             let mut cmd = Command::new("cmd");
             cmd.args(["/C", "npx", "tsx", &script_path_str]);
             cmd
@@ -97,13 +116,17 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
             .map_err(|e| format!("Binary path error: {}", e))?;
         
-        let (prod_engine, prod_browser) = runtime::get_bundle_paths(app);
+        let (prod_engine, prod_browser) = runtime::get_bundle_paths(&app);
         
         let tsx_path = prod_engine.join("node_modules/tsx/dist/cli.mjs");
         
+        // Use forward slashes for consistency across platforms
+        let script_path_normalized = script_path_str.replace("\\", "/");
+        let tsx_path_normalized = tsx_path.to_string_lossy().replace("\\", "/");
+        
         let mut c = Command::new(sidecar_node);
-        c.arg(tsx_path.to_string_lossy().to_string());
-        c.arg(&script_path_str);
+        c.arg(tsx_path_normalized);
+        c.arg(script_path_normalized);
         
         #[cfg(unix)] { c.process_group(0); }
         (c, prod_engine, Some(prod_browser))
