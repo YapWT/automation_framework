@@ -15,10 +15,8 @@ struct AppState {
 }
 
 fn get_tests_dir() -> PathBuf {
-    let mut path = std::env::current_dir().unwrap();
-    if path.ends_with("src-tauri") {
-        path.pop();
-    }
+    let mut path = std::env::temp_dir();
+    path.push("automation_framework");
     path.push("automation-engine");
     path.push("tests");
     if !path.exists() {
@@ -81,6 +79,8 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         let mut engine_path = std::env::current_dir().unwrap();
         if engine_path.ends_with("src-tauri") { engine_path.pop(); }
         engine_path.push("automation-engine");
+        
+        let browser_path = engine_path.join("local-browsers");
 
         let mut c = if cfg!(target_os = "windows") {
             let mut cmd = Command::new("cmd");
@@ -92,7 +92,7 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
             #[cfg(unix)] { cmd.process_group(0); }
             cmd
         };
-        (c, engine_path, None)
+        (c, engine_path, Some(browser_path))
     } else {
         let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
             .map_err(|e| format!("Binary path error: {}", e))?;
@@ -112,6 +112,10 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     command.current_dir(&final_engine_path);
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
+
+    // Set NODE_PATH so imported modules can be found
+    let node_modules_path = final_engine_path.join("node_modules");
+    command.env("NODE_PATH", node_modules_path.to_string_lossy().to_string());
 
     if let Some(bp) = final_browser_path {
         command.env("PLAYWRIGHT_BROWSERS_PATH", bp);

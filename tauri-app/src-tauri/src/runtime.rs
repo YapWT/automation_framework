@@ -7,9 +7,9 @@ pub fn get_bundle_paths<R: Runtime>(app: &AppHandle<R>) -> (PathBuf, PathBuf) {
         .resolve("", BaseDirectory::Resource)
         .expect("failed to resolve resource dir");
     
-    // In production, everything lives inside the resources folder
-    let engine_path = resource_path.clone();
-    let browser_path = resource_path.join("local-browsers");
+    // The bundled engine is copied under resources/automation-engine
+    let engine_path = resource_path.join("automation-engine");
+    let browser_path = engine_path.join("local-browsers");
     
     (engine_path, browser_path)
 }
