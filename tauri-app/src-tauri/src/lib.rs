@@ -35,10 +35,31 @@ fn get_engine_tests_dir(engine_path: &PathBuf) -> PathBuf {
 }
 
 #[tauri::command]
-async fn auto_save_temp(code: String) -> Result<String, String> {
-    let mut path = get_tests_dir();
+async fn auto_save_temp(window: Window, code: String) -> Result<String, String> {
+    let app = window.app_handle();
+    let is_prod = !cfg!(debug_assertions);
+    
+    let mut path = if is_prod {
+        // In production, save to bundled engine's tests directory
+        let (prod_engine, _) = runtime::get_bundle_paths(&app);
+        get_engine_tests_dir(&prod_engine)
+    } else {
+        // In development, save to temp directory
+        get_tests_dir()
+    };
+    
     path.push("temp_task.ts");
-    fs::write(path, code).map_err(|e| e.to_string())?;
+    
+    // Remove the extended-path prefix on Windows for consistency
+    let path_str = path.to_string_lossy().to_string();
+    let normalized_path = if cfg!(target_os = "windows") {
+        path_str.replace("\\\\?\\", "")
+    } else {
+        path_str
+    };
+    let final_path = PathBuf::from(&normalized_path);
+    
+    fs::write(&final_path, code).map_err(|e| e.to_string())?;
     Ok("Saved".into())
 }
 
@@ -94,10 +115,15 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     
     // Verify script exists
     if !script_path.exists() {
-        return Err(format!("Script not found: {:?}", script_path));
+        return Err(format!("Script not found: {:?}\nExpected at: {:?}", script_path, script_path.canonicalize().ok()));
     }
     
-    let script_path_str = script_path.to_string_lossy().to_string();
+    // Normalize Windows paths (remove \\?\ prefix)
+    let script_path_str = if cfg!(target_os = "windows") {
+        script_path.to_string_lossy().to_string().replace("\\\\?\\", "")
+    } else {
+        script_path.to_string_lossy().to_string()
+    };
 
     let (mut command, final_engine_path, final_browser_path) = if !is_prod {
         let mut engine_path = std::env::current_dir().unwrap();
@@ -150,12 +176,11 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         }
         
         // Use forward slashes for consistency across platforms
-        let script_path_normalized = script_path_str.replace("\\", "/");
         let tsx_path_normalized = tsx_path.to_string_lossy().replace("\\", "/");
         
         let mut c = Command::new(sidecar_node);
         c.arg(tsx_path_normalized);
-        c.arg(script_path_normalized);
+        c.arg(&script_path_str);
         
         #[cfg(unix)] { c.process_group(0); }
         (c, prod_engine, Some(prod_browser))
