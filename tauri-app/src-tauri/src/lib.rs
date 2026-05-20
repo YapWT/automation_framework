@@ -92,6 +92,11 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         path
     };
     
+    // Verify script exists
+    if !script_path.exists() {
+        return Err(format!("Script not found: {:?}", script_path));
+    }
+    
     let script_path_str = script_path.to_string_lossy().to_string();
 
     let (mut command, final_engine_path, final_browser_path) = if !is_prod {
@@ -114,11 +119,35 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         (c, engine_path, Some(browser_path))
     } else {
         let sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
-            .map_err(|e| format!("Binary path error: {}", e))?;
+            .map_err(|e| format!("Failed to resolve node binary: {}", e))?;
+        
+        // Verify node binary exists
+        if !sidecar_node.exists() {
+            return Err(format!("Node binary not found at: {:?}", sidecar_node));
+        }
         
         let (prod_engine, prod_browser) = runtime::get_bundle_paths(&app);
         
+        // Verify engine directory exists
+        if !prod_engine.exists() {
+            return Err(format!("Engine directory not found at: {:?}", prod_engine));
+        }
+        
+        // Verify browsers are installed
+        let chromium_check = prod_browser.join("chromium-1223");
+        if !chromium_check.exists() {
+            return Err(format!(
+                "Chromium browsers not found at: {:?}\nPlease run: npm run prepare-engine",
+                prod_browser
+            ));
+        }
+        
         let tsx_path = prod_engine.join("node_modules/tsx/dist/cli.mjs");
+        
+        // Verify tsx is installed
+        if !tsx_path.exists() {
+            return Err(format!("tsx not found at: {:?}\nPlease run: npm install in automation-engine", tsx_path));
+        }
         
         // Use forward slashes for consistency across platforms
         let script_path_normalized = script_path_str.replace("\\", "/");
@@ -145,7 +174,7 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
     }
 
     let mut child = command.spawn()
-        .map_err(|e| format!("System failed to start the process: {}. Path: {:?}", e, final_engine_path))?;
+        .map_err(|e| format!("System failed to start the process: {}. Engine path: {:?}", e, final_engine_path))?;
 
     let stdout = child.stdout.take().ok_or("Stdout capture failed")?;
     let stderr = child.stderr.take().ok_or("Stderr capture failed")?;

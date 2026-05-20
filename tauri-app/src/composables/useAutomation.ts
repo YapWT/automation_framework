@@ -239,8 +239,10 @@ export function useAutomation() {
             await invoke('auto_save_temp', { code: finalCode.value });
             handleIncomingLog(`TASK:START:EXECUTION:Running ${name}`);
             await invoke('execute_script', { filename: name });
-        } catch (err) {
-            handleIncomingLog(`TASK:FAIL:EXECUTION:Failed to start`);
+        } catch (err: any) {
+            const errorMsg = err?.message || err?.toString?.() || String(err);
+            console.error('Script execution error:', errorMsg);
+            handleIncomingLog(`TASK:FAIL:EXECUTION:Error: ${errorMsg}`);
             isProcessing.value = false;
         }
     }
@@ -299,7 +301,10 @@ export function useAutomation() {
         try {
             handleIncomingLog(`TASK:START:EXECUTION:Running script: ${file}`);
             await invoke('execute_script', { filename: file });
-        } catch (err) {
+        } catch (err: any) {
+            const errorMsg = err?.message || err?.toString?.() || String(err);
+            console.error('Script execution error:', errorMsg);
+            handleIncomingLog(`TASK:FAIL:EXECUTION:Error: ${errorMsg}`);
             isProcessing.value = false;
             runningFilePath.value = null;
         }
