@@ -1,7 +1,7 @@
 mod runtime;
 use std::fs;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -148,64 +148,78 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
         (c, engine_path, Some(browser_path))
     } else {
         // Production mode - validate all paths
-        let resource_path = app.path()
-            .resolve("", BaseDirectory::Resource)
-            .unwrap_or_default();
+        let mut sidecar_node = app.path().resolve("bin/node", BaseDirectory::Resource)
+            .unwrap_or_else(|e| {
+                errors.push(format!("✗ Failed to resolve node binary: {}", e));
+                PathBuf::new()
+            });
         
-        let mut sidecar_node = PathBuf::new();
-        let exe_suffix = if cfg!(target_os = "windows") { ".exe" } else { "" };
-        
-        // Try multiple locations for the node binary
-        let candidate_paths = vec![
-            // Primary: bin/node in resource directory
-            resource_path.join("bin").join(format!("node{}", exe_suffix)),
-            // _up_/bin/node (Tauri production extraction)
-            resource_path.join("_up_").join("bin").join(format!("node{}", exe_suffix)),
-            // root bin/node (fallback)
-            resource_path.join("bin").join("node"),
-            // _up_/bin/node without .exe on Windows
-            resource_path.join("_up_").join("bin").join("node"),
-        ];
-        
-        for candidate in candidate_paths {
-            // Normalize Windows extended-path prefix
-            let mut normalized = candidate.clone();
-            if cfg!(target_os = "windows") {
-                let path_str = normalized.to_string_lossy().to_string();
-                if path_str.starts_with("\\\\?\\") {
-                    normalized = PathBuf::from(path_str.replace("\\\\?\\", ""));
-                }
+        // Helper function to normalize Windows paths
+        fn normalize_path(path: &Path) -> PathBuf {
+            let path_str = path.to_string_lossy().to_string();
+            if cfg!(target_os = "windows") && path_str.starts_with("\\\\?\\") {
+                PathBuf::from(path_str.strip_prefix("\\\\?\\").unwrap())
+            } else {
+                path.to_path_buf()
             }
+        }
+        
+        // Normalize the resolved path
+        sidecar_node = normalize_path(&sidecar_node);
+        
+        // On Windows, also check for .exe version
+        let mut checked_paths = vec![sidecar_node.clone()];
+        if cfg!(target_os = "windows") {
+            let exe_path = PathBuf::from(format!("{}.exe", sidecar_node.display()));
+            checked_paths.push(exe_path.clone());
             
-            if normalized.exists() {
-                sidecar_node = normalized;
-                break;
+            if exe_path.exists() {
+                sidecar_node = exe_path;
+            }
+        }
+        
+        // Try fallback locations if not found
+        if !sidecar_node.exists() {
+            let resource_path = app.path()
+                .resolve("", BaseDirectory::Resource)
+                .unwrap_or_default();
+            let resource_path = normalize_path(&resource_path);
+            
+            // Try multiple fallback locations
+            let fallbacks = vec![
+                resource_path.join("bin").join("node"),
+                resource_path.join("bin").join("node.exe"),
+                resource_path.join("_up_").join("bin").join("node"),
+                resource_path.join("_up_").join("bin").join("node.exe"),
+            ];
+            
+            for fallback in &fallbacks {
+                checked_paths.push(fallback.clone());
+                if fallback.exists() {
+                    sidecar_node = fallback.clone();
+                    break;
+                }
             }
         }
         
         // Verify node binary exists
-        if !sidecar_node.exists() || sidecar_node.as_os_str().is_empty() {
-            errors.push(format!(
-                "✗ Node binary not found. Checked locations:\n  • {}/bin/node\n  • {}/_up_/bin/node\n  Resource path: {}\n  Fix: Run 'npm run prepare-sidecar' before building",
-                resource_path.display(),
-                resource_path.display(),
-                resource_path.display()
-            ));
+        if !sidecar_node.exists() {
+            let checked_str = checked_paths
+                .iter()
+                .map(|p| format!("  • {}", p.display()))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let resource_path = app.path()
+                .resolve("", BaseDirectory::Resource)
+                .unwrap_or_default();
+            errors.push(format!("✗ Node binary not found. Checked locations:\n{}\nResource path: {}\nFix: Run 'npm run prepare-sidecar' before building", checked_str, resource_path.display()));
         }
         
         let (mut prod_engine, mut prod_browser) = runtime::get_bundle_paths(&app);
         
-        // Normalize Windows extended-path prefix for all bundled paths
-        if cfg!(target_os = "windows") {
-            let engine_str = prod_engine.to_string_lossy().to_string();
-            if engine_str.starts_with("\\\\?\\") {
-                prod_engine = PathBuf::from(engine_str.replace("\\\\?\\", ""));
-            }
-            let browser_str = prod_browser.to_string_lossy().to_string();
-            if browser_str.starts_with("\\\\?\\") {
-                prod_browser = PathBuf::from(browser_str.replace("\\\\?\\", ""));
-            }
-        }
+        // Normalize Windows extended-path prefix for all bundled paths using the helper
+        prod_engine = normalize_path(&prod_engine);
+        prod_browser = normalize_path(&prod_browser);
         
         // Verify engine directory exists
         if !prod_engine.exists() {
