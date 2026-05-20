@@ -162,6 +162,25 @@ async fn execute_script(window: Window, state: State<'_, AppState>, filename: St
             }
         }
         
+        // Try fallback locations if not found
+        if !sidecar_node.exists() {
+            let resource_path = app.path()
+                .resolve("", BaseDirectory::Resource)
+                .unwrap_or_default();
+            
+            // Try _up_/bin/node
+            let fallback1 = resource_path.join("_up_").join("bin").join("node");
+            if fallback1.exists() {
+                sidecar_node = fallback1;
+            } else {
+                // Try _up_/bin/node.exe (Windows)
+                let fallback2 = resource_path.join("_up_").join("bin").join("node.exe");
+                if fallback2.exists() {
+                    sidecar_node = fallback2;
+                }
+            }
+        }
+        
         // Verify node binary exists
         if !sidecar_node.exists() {
             errors.push(format!("✗ Node binary not found at:\n  {}\n  (Make sure 'node prepare-sidecar.js' was run)", sidecar_node.display()));
